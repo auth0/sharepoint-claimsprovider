@@ -1,3 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<package dslVersion="1.0.0.0" Id="bd199ff7-f5d2-4901-86e2-5737401601dd" solutionId="bd199ff7-f5d2-4901-86e2-5737401601dd" xmlns="http://schemas.microsoft.com/VisualStudio/2008/SharePointTools/PackageModel" name="Auth0.Sharepoint.ClaimsProvider">
+<package xmlns:dm0="http://schemas.microsoft.com/VisualStudio/2008/DslTools/Core" dslVersion="1.0.0.0" Id="bd199ff7-f5d2-4901-86e2-5737401601dd" solutionId="bd199ff7-f5d2-4901-86e2-5737401601dd" resetWebServer="false" name="Auth0.Sharepoint.ClaimsProvider" xmlns="http://schemas.microsoft.com/VisualStudio/2008/SharePointTools/PackageModel">
+  <features>
+    <featureReference itemId="4da3c77b-ccad-4526-9e13-9923d9ae89b8" />
+  </features>
 </package>

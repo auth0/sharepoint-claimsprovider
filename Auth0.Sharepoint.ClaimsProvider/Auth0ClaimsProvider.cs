@@ -12,6 +12,9 @@
 
     public class Auth0ClaimsProvider : SPClaimProvider
     {
+        public const string DefaultProviderDisplayName = "Federated Users (Auth0)";
+        public const string DefaultProviderInternalName = "Auth0ClaimsProvider";
+
         public Auth0ClaimsProvider(string displayName)
             : base(displayName)
         {
@@ -44,12 +47,12 @@
 
         public virtual string ProviderDisplayName
         {
-            get { return Constants.ProviderDisplayName; }
+            get { return DefaultProviderDisplayName; }
         }
 
         public virtual string ProviderInternalName
         {
-            get { return Constants.ProviderInternalName; }
+            get { return DefaultProviderInternalName; }
         }
 
         protected override void FillClaimTypes(List<string> claimTypes)

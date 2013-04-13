@@ -55,9 +55,15 @@
   <ItemGroup>
     <Compile Include="Auth0ClaimsProvider.cs" />
     <Compile Include="Constants.cs" />
+    <Compile Include="Features\Auth0ClaimsProvider\Auth0ClaimsProvider.EventReceiver.cs">
+      <DependentUpon>Auth0ClaimsProvider.feature</DependentUpon>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Features\Auth0ClaimsProvider\Auth0ClaimsProvider.feature">
+      <FeatureId>{4da3c77b-ccad-4526-9e13-9923d9ae89b8}</FeatureId>
+    </None>
     <None Include="key.snk" />
     <None Include="Package\Package.package">
       <PackageId>{bd199ff7-f5d2-4901-86e2-5737401601dd}</PackageId>
@@ -66,8 +72,11 @@
       <DependentUpon>Package.package</DependentUpon>
     </None>
   </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
-    <Folder Include="Features\" />
+    <Content Include="Features\Auth0ClaimsProvider\Auth0ClaimsProvider.Template.xml">
+      <DependentUpon>Auth0ClaimsProvider.feature</DependentUpon>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v10.0\SharePointTools\Microsoft.VisualStudio.SharePoint.targets" />

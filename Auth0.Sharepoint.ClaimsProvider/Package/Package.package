@@ -1,0 +1,3 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package dslVersion="1.0.0.0" Id="bd199ff7-f5d2-4901-86e2-5737401601dd" solutionId="bd199ff7-f5d2-4901-86e2-5737401601dd" xmlns="http://schemas.microsoft.com/VisualStudio/2008/SharePointTools/PackageModel" name="Auth0.Sharepoint.ClaimsProvider">
+</package>

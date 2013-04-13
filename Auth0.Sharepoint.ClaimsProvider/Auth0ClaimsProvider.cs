@@ -19,27 +19,37 @@
 
         public override string Name
         {
-            get { throw new NotImplementedException(); }
+            get { return this.ProviderInternalName; }
         }
 
         public override bool SupportsEntityInformation
         {
-            get { throw new NotImplementedException(); }
+            get { return false; }
         }
 
         public override bool SupportsHierarchy
         {
-            get { throw new NotImplementedException(); }
+            get { return true; }
         }
 
         public override bool SupportsResolve
         {
-            get { throw new NotImplementedException(); }
+            get { return true; }
         }
 
         public override bool SupportsSearch
         {
-            get { throw new NotImplementedException(); }
+            get { return true; }
+        }
+
+        public virtual string ProviderDisplayName
+        {
+            get { return Constants.ProviderDisplayName; }
+        }
+
+        public virtual string ProviderInternalName
+        {
+            get { return Constants.ProviderInternalName; }
         }
 
         protected override void FillClaimTypes(List<string> claimTypes)

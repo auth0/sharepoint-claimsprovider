@@ -13,6 +13,8 @@
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{BB1F664B-9266-4fd6-B973-E1E44974B511};{14822709-B5A1-4724-98CA-57A101D1B079};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <SandboxedSolution>False</SandboxedSolution>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
+    <RestorePackages>true</RestorePackages>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -40,7 +42,16 @@
     <AssemblyOriginatorKeyFile>key.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Auth0">
+      <HintPath>..\packages\Auth0.1.0.10\lib\Auth0.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.IdentityModel, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\packages\Newtonsoft.Json.4.5.11\lib\net35\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="RestSharp">
+      <HintPath>..\packages\RestSharp.104.1\lib\net35\RestSharp.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
@@ -54,7 +65,7 @@
   <ItemGroup>
     <Compile Include="Auth0Config.cs" />
     <Compile Include="ClaimAttribute.cs" />
-    <Compile Include="Constants.cs" />
+    <Compile Include="ConsolidatedResult.cs" />
     <Compile Include="CustomClaimsProvider.cs" />
     <Compile Include="Features\Auth0\Auth0.EventReceiver.cs">
       <DependentUpon>Auth0.feature</DependentUpon>
@@ -67,6 +78,7 @@
       <FeatureId>{8adcc9c5-ea3f-4562-b8f6-5eb576ec2f72}</FeatureId>
     </None>
     <None Include="key.snk" />
+    <None Include="packages.config" />
     <None Include="Package\Package.package">
       <PackageId>{7d1c1a7c-a9d2-4538-b969-cd702c737bf3}</PackageId>
     </None>
@@ -82,4 +94,5 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v10.0\SharePointTools\Microsoft.VisualStudio.SharePoint.targets" />
+  <Import Project="$(SolutionDir)\.nuget\nuget.targets" />
 </Project>

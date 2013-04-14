@@ -15,6 +15,7 @@
         private ClaimAttribute identityAttribute; // attribute mapped to the identity claim in the SPTrustedLoginProvider
         private IEnumerable<ClaimAttribute> attributesToQuery;
         private IEnumerable<ClaimAttribute> attributesDefinitionList;
+        private IEnumerable<ConsolidatedResult> consolidatedResults;
 
         public CustomClaimsProvider(string displayName)
             : base(displayName)
@@ -48,12 +49,12 @@
 
         public override bool SupportsResolve
         {
-            get { return false; }
+            get { return true; }
         }
 
         public override bool SupportsSearch
         {
-            get { return false; }
+            get { return true; }
         }
 
         internal static string ProviderDisplayName
@@ -100,7 +101,25 @@
 
         protected override void FillEntityTypes(List<string> entityTypes)
         {
-            throw new NotImplementedException();
+            if (this.attributesToQuery == null)
+            {
+                return;
+            }
+
+            var uniqueEntitytypes = from attributes in this.attributesToQuery
+                                    where attributes.ClaimEntityType != null
+                                    group attributes by new { attributes.ClaimEntityType } into groupedByEntityType
+                                    select new { value = groupedByEntityType.Key.ClaimEntityType };
+
+            if (uniqueEntitytypes == null)
+            {
+                return;
+            }
+
+            foreach (var entityType in uniqueEntitytypes)
+            {
+                entityTypes.Add(entityType.value);
+            }
         }
 
         protected override void FillHierarchy(Uri context, string[] entityTypes, string hierarchyNodeID, int numberOfLevels, SPProviderHierarchyTree hierarchy)
@@ -135,22 +154,146 @@
 
         protected override void FillResolve(Uri context, string[] entityTypes, SPClaim resolveInput, List<PickerEntity> resolved)
         {
-            throw new NotImplementedException();
+            // Ensure that People Picker is asking for the type of entity that we return; site collection administrator will not return, for example.
+            if (!CustomClaimsProvider.EntityTypesContain(entityTypes, SPClaimEntityTypes.FormsRole))
+            {
+                return;
+            }
+
+            if (!string.Equals(
+                resolveInput.OriginalIssuer,
+                SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, this.associatedSPTrustedLoginProvider.Name),
+                StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            if (this.attributesToQuery == null)
+            {
+                return;
+            }
+
+            SPSecurity.RunWithElevatedPrivileges(delegate
+            {
+                this.Initialize();
+
+                // Resolve value only against the incoming claim type that uniquely identifies the user (mail, userName, etc)
+                var attributes = this.attributesToQuery.Where(a => a.ClaimType == resolveInput.ClaimType && !a.ResolveAsIdentityClaim);
+
+                if (attributes.Count() != 1)
+                {
+                    // Should always find only 1 attribute at this stage
+                    // string.Format("Found {0} attributes that match the claim type \"{1}\", but only 1 is expected. Verify that there is no duplicate claim type. Skipping resolution of the claim.", ProviderDisplayName, attributes.Count().ToString(), resolveInput.ClaimType)
+                    return;
+                }
+
+                this.ResolveInputBulk(resolveInput.Value, attributes, true);
+                if (this.consolidatedResults != null && this.consolidatedResults.Count() > 0)
+                {
+                    resolved.Add(this.consolidatedResults.ElementAt(0).PickerEntity);
+                    return;
+                }
+            });
         }
 
         protected override void FillResolve(Uri context, string[] entityTypes, string resolveInput, List<PickerEntity> resolved)
         {
-            throw new NotImplementedException();
+            // Ensure that People Picker is asking for the type of entity that we return; site collection administrator will not return, for example.
+            if (!CustomClaimsProvider.EntityTypesContain(entityTypes, SPClaimEntityTypes.FormsRole))
+            {
+                return;
+            }
+
+            if (this.attributesToQuery == null)
+            {
+                return;
+            }
+
+            string input = resolveInput;
+            SPSecurity.RunWithElevatedPrivileges(delegate
+            {
+                this.Initialize();
+
+                IEnumerable<ClaimAttribute> attributeCollection = this.attributesToQuery.Where(
+                    a => entityTypes.Contains(a.ClaimEntityType) && !a.ResolveAsIdentityClaim);
+
+                this.ResolveInputBulk(input, attributeCollection, false);
+
+                if (this.consolidatedResults != null && this.consolidatedResults.Count() > 0)
+                {
+                    foreach (var result in this.consolidatedResults)
+                    {
+                        resolved.Add(result.PickerEntity);
+                    }
+                }
+            });
         }
 
         protected override void FillSchema(SPProviderSchema schema)
         {
-            throw new NotImplementedException();
         }
 
         protected override void FillSearch(Uri context, string[] entityTypes, string searchPattern, string hierarchyNodeID, int maxCount, SPProviderHierarchyTree searchTree)
         {
-            throw new NotImplementedException();
+            // Ensure that People Picker is asking for the type of entity that we return; site collection administrator will not return, for example.
+            if (!CustomClaimsProvider.EntityTypesContain(entityTypes, SPClaimEntityTypes.FormsRole))
+            {
+                return;
+            }
+
+            if (this.attributesToQuery == null)
+            {
+                return;
+            }
+
+            SPProviderHierarchyNode matchNode = null;
+            SPSecurity.RunWithElevatedPrivileges(delegate
+            {
+                this.Initialize();
+
+                IEnumerable<ClaimAttribute> attributeCollection;
+                if (!string.IsNullOrEmpty(hierarchyNodeID))
+                {
+                    // Restrict search to attribute currently selected in the hierarchy
+                    attributeCollection = this.attributesToQuery.Where(
+                        a => a.PeoplePickerAttributeHierarchyNodeId == hierarchyNodeID && entityTypes.Contains(a.ClaimEntityType));
+
+                    // If currently selected attribute is identity attribute then add Auth0 attributes that should always be queried
+                    if (attributeCollection.Contains(this.identityAttribute))
+                    {
+                        attributeCollection = attributeCollection.Union(this.attributesToQuery.Where(a => a.ResolveAsIdentityClaim));
+                    }
+                }
+                else
+                {
+                    attributeCollection = this.attributesToQuery.Where(a => entityTypes.Contains(a.ClaimEntityType) || a.ResolveAsIdentityClaim);
+                }
+
+                this.ResolveInputBulk(searchPattern, attributeCollection, false);
+                if (this.consolidatedResults != null && this.consolidatedResults.Count() > 0)
+                {
+                    foreach (var consolidatedResult in this.consolidatedResults)
+                    {
+                        // Add current PickerEntity to the corresponding attribute in the hierarchy
+                        if (searchTree.HasChild(consolidatedResult.Attribute.PeoplePickerAttributeHierarchyNodeId))
+                        {
+                            matchNode = searchTree.Children.First(
+                                a => a.HierarchyNodeID == consolidatedResult.Attribute.PeoplePickerAttributeHierarchyNodeId);
+                        }
+                        else
+                        {
+                            matchNode = new SPProviderHierarchyNode(
+                                ProviderInternalName, 
+                                consolidatedResult.Attribute.PeoplePickerAttributeDisplayName, 
+                                consolidatedResult.Attribute.PeoplePickerAttributeHierarchyNodeId, 
+                                true);
+                            searchTree.AddChild(matchNode);
+                        }
+
+                        matchNode.AddEntity(consolidatedResult.PickerEntity);
+                    }
+                }
+            });
         }
 
         protected void Initialize()
@@ -163,6 +306,12 @@
                 this.attributesDefinitionList = this.auth0Config.AttributesList;
                 this.PopulateActualAttributesList();
             }
+        }
+
+        protected virtual void ResolveInputBulk(string input, IEnumerable<ClaimAttribute> attributesToQuery, bool exactSearch)
+        {
+            // TODO: perform search with AUth0 API
+            this.consolidatedResults = new List<ConsolidatedResult>();
         }
 
         private void PopulateActualAttributesList()

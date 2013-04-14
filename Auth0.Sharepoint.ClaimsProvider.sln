@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Auth0.Sharepoint.ClaimsProvider", "Auth0.Sharepoint.ClaimsProvider\Auth0.Sharepoint.ClaimsProvider.csproj", "{6ADA50E0-BCAB-4BEC-BAAC-1D1EA746E5CB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Auth0.ClaimsProvider", "Auth0.ClaimsProvider\Auth0.ClaimsProvider.csproj", "{FCE5325D-552F-4A07-955A-BA982E937E13}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -9,12 +9,12 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{6ADA50E0-BCAB-4BEC-BAAC-1D1EA746E5CB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6ADA50E0-BCAB-4BEC-BAAC-1D1EA746E5CB}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6ADA50E0-BCAB-4BEC-BAAC-1D1EA746E5CB}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
-		{6ADA50E0-BCAB-4BEC-BAAC-1D1EA746E5CB}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6ADA50E0-BCAB-4BEC-BAAC-1D1EA746E5CB}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6ADA50E0-BCAB-4BEC-BAAC-1D1EA746E5CB}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{FCE5325D-552F-4A07-955A-BA982E937E13}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FCE5325D-552F-4A07-955A-BA982E937E13}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FCE5325D-552F-4A07-955A-BA982E937E13}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{FCE5325D-552F-4A07-955A-BA982E937E13}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FCE5325D-552F-4A07-955A-BA982E937E13}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FCE5325D-552F-4A07-955A-BA982E937E13}.Release|Any CPU.Deploy.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

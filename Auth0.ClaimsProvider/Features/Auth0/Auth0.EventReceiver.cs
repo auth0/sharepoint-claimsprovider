@@ -1,4 +1,4 @@
-namespace Auth0.Sharepoint.ClaimsProvider.Features.Auth0ClaimsProvider
+namespace Auth0.ClaimsProvider.Features.Auth0.ClaimsProvider.Feature
 {
     using System;
     using System.Runtime.InteropServices;
@@ -8,14 +8,14 @@ namespace Auth0.Sharepoint.ClaimsProvider.Features.Auth0ClaimsProvider
     /// <remarks>
     /// The GUID attached to this class may be used during packaging and should not be modified.
     /// </remarks>
-    [Guid("e639ef1a-a33f-4dbe-b248-d0857806fbe3")]
-    public class Auth0ClaimsProviderFeatureReceiver : SPClaimProviderFeatureReceiver
+    [Guid("cb05048e-0b47-4874-8326-2632bf2432cc")]
+    public class Auth0ClaimsReceiver : SPClaimProviderFeatureReceiver
     {
         public override string ClaimProviderAssembly
         {
             get
             {
-                return typeof(Auth0.Sharepoint.ClaimsProvider.Auth0ClaimsProvider).Assembly.FullName;
+                return typeof(CustomClaimsProvider).Assembly.FullName;
             }
         }
 
@@ -27,11 +27,27 @@ namespace Auth0.Sharepoint.ClaimsProvider.Features.Auth0ClaimsProvider
             }
         }
 
+        public override bool ClaimProviderEnabled
+        {
+            get
+            {
+                return true;
+            }
+        }
+
+        public override bool ClaimProviderUsedByDefault
+        {
+            get
+            {
+                return true;
+            }
+        }
+
         public override string ClaimProviderDisplayName
         {
             get
             {
-                return Auth0.Sharepoint.ClaimsProvider.Auth0ClaimsProvider.DefaultProviderDisplayName;
+                return CustomClaimsProvider.ProviderDisplayName;
             }
         }
 
@@ -39,7 +55,7 @@ namespace Auth0.Sharepoint.ClaimsProvider.Features.Auth0ClaimsProvider
         {
             get
             {
-                return typeof(Auth0.Sharepoint.ClaimsProvider.Auth0ClaimsProvider).FullName;
+                return typeof(CustomClaimsProvider).FullName;
             }
         }
 

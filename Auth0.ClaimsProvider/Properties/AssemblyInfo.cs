@@ -6,11 +6,11 @@ using System.Security;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Auth0.Sharepoint.ClaimsProvider")]
+[assembly: AssemblyTitle("Auth0.ClaimsProvider")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Cloudshare")]
-[assembly: AssemblyProduct("Auth0.Sharepoint.ClaimsProvider")]
+[assembly: AssemblyProduct("Auth0.ClaimsProvider")]
 [assembly: AssemblyCopyright("Copyright © Cloudshare 2013")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -21,7 +21,7 @@ using System.Security;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("6ada50e0-bcab-4bec-baac-1d1ea746e5cb")]
+[assembly: Guid("fce5325d-552f-4a07-955a-ba982e937e13")]
 
 // Version information for an assembly consists of the following four values:
 //
@@ -33,6 +33,5 @@ using System.Security;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("1.0.0.0")]
-[assembly: AllowPartiallyTrustedCallers]
+[assembly: AssemblyVersion("1.0.1.200")]
+[assembly: AssemblyFileVersion("1.0.1.200")]

@@ -49,6 +49,10 @@ ipch/
 *.vsp
 *.vspx
 
+# Sharepoint
+pkg/
+pkgobj/
+
 # Guidance Automation Toolkit
 *.gpState
 

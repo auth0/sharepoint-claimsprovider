@@ -4,14 +4,15 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{6ADA50E0-BCAB-4BEC-BAAC-1D1EA746E5CB}</ProjectGuid>
+    <ProjectGuid>{FCE5325D-552F-4A07-955A-BA982E937E13}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Auth0.Sharepoint.ClaimsProvider</RootNamespace>
-    <AssemblyName>Auth0.Sharepoint.ClaimsProvider</AssemblyName>
+    <RootNamespace>Auth0.ClaimsProvider</RootNamespace>
+    <AssemblyName>Auth0.ClaimsProvider</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{BB1F664B-9266-4fd6-B973-E1E44974B511};{14822709-B5A1-4724-98CA-57A101D1B079};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <SandboxedSolution>False</SandboxedSolution>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -39,34 +40,35 @@
     <AssemblyOriginatorKeyFile>key.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.IdentityModel, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\Program Files\Reference Assemblies\Microsoft\Windows Identity Foundation\v3.5\Microsoft.IdentityModel.dll</HintPath>
-    </Reference>
+    <Reference Include="Microsoft.IdentityModel, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
     <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.ServiceModel" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="Microsoft.SharePoint" />
     <Reference Include="Microsoft.SharePoint.Security" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Auth0ClaimsProvider.cs" />
+    <Compile Include="Auth0Config.cs" />
+    <Compile Include="ClaimAttribute.cs" />
     <Compile Include="Constants.cs" />
-    <Compile Include="Features\Auth0ClaimsProvider\Auth0ClaimsProvider.EventReceiver.cs">
-      <DependentUpon>Auth0ClaimsProvider.feature</DependentUpon>
+    <Compile Include="CustomClaimsProvider.cs" />
+    <Compile Include="Features\Auth0\Auth0.EventReceiver.cs">
+      <DependentUpon>Auth0.feature</DependentUpon>
     </Compile>
+    <Compile Include="Helper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Features\Auth0ClaimsProvider\Auth0ClaimsProvider.feature">
-      <FeatureId>{4da3c77b-ccad-4526-9e13-9923d9ae89b8}</FeatureId>
+    <None Include="Features\Auth0\Auth0.feature">
+      <FeatureId>{8adcc9c5-ea3f-4562-b8f6-5eb576ec2f72}</FeatureId>
     </None>
     <None Include="key.snk" />
     <None Include="Package\Package.package">
-      <PackageId>{bd199ff7-f5d2-4901-86e2-5737401601dd}</PackageId>
+      <PackageId>{7d1c1a7c-a9d2-4538-b969-cd702c737bf3}</PackageId>
     </None>
     <None Include="Package\Package.Template.xml">
       <DependentUpon>Package.package</DependentUpon>
@@ -74,8 +76,8 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
-    <Content Include="Features\Auth0ClaimsProvider\Auth0ClaimsProvider.Template.xml">
-      <DependentUpon>Auth0ClaimsProvider.feature</DependentUpon>
+    <Content Include="Features\Auth0\Auth0.Template.xml">
+      <DependentUpon>Auth0.feature</DependentUpon>
     </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

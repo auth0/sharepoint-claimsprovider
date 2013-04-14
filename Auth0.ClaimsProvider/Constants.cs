@@ -1,4 +1,4 @@
-﻿namespace Auth0.Sharepoint.ClaimsProvider
+﻿namespace Auth0.ClaimsProvider
 {
     using System;
 

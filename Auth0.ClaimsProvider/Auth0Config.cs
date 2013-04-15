@@ -15,21 +15,26 @@
 
         public string Domain { get; set; }
 
+        public string ConnectionClaimType { get; set; }
+
         public List<ClaimAttribute> AttributesList { get; set; }
 
         public static Auth0Config GetDefaultSettings()
         {
-            var config = new Auth0Config();
-            config.ClientId = "";
-            config.ClientSecret = "";
-            config.Domain = "";
-            config.AttributesList = new List<ClaimAttribute>
+            var config = new Auth0Config
             {
-                new ClaimAttribute
+                ClientId = "8rag8y1vsf6sTZ29aUJTKSdo4rvECEzk",
+                ClientSecret = "EKRE6ShdYvF3ckXJJfSjVNd0PUjI8hbpnkKAhNasUVJHU4Apa7wEL3GfYa6YuGts",
+                Domain = "iaco.auth0.com",
+                ConnectionClaimType = "http://schemas.auth0.com/connection",
+                AttributesList = new List<ClaimAttribute>
                 {
-                    ClaimType = Microsoft.IdentityModel.Claims.ClaimTypes.Email, 
-                    ClaimEntityType = SPClaimEntityTypes.User
-                },
+                    new ClaimAttribute
+                    {
+                        ClaimType = Microsoft.IdentityModel.Claims.ClaimTypes.Email, 
+                        ClaimEntityType = SPClaimEntityTypes.User
+                    },
+                }
             };
 
             return config;

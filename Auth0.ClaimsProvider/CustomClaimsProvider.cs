@@ -4,9 +4,13 @@
     using System.Collections.Generic;
     using System.Collections.ObjectModel;
     using System.Linq;
+    using Microsoft.IdentityModel.Claims;
     using Microsoft.SharePoint;
     using Microsoft.SharePoint.Administration.Claims;
     using Microsoft.SharePoint.WebControls;
+    using RestSharp;
+    using System.Net;
+    using Newtonsoft.Json;
 
     public class CustomClaimsProvider : SPClaimProvider
     {
@@ -20,11 +24,13 @@
         public CustomClaimsProvider(string displayName)
             : base(displayName)
         {
-            // SPContext.Current is null in the STS, and there is nothing to do in the STS
             if (SPContext.Current == null)
             {
                 return;
             }
+
+            // TODO: remove this
+            ServicePointManager.ServerCertificateValidationCallback += delegate { return true; };
 
             this.Initialize();
         }
@@ -65,6 +71,22 @@
         internal static string ProviderInternalName
         {
             get { return "Federated Users (Auth0)"; }
+        }
+
+        internal string Auth0ConnectionName
+        {
+            get 
+            {
+                var claimsIdentity = System.Threading.Thread.CurrentPrincipal.Identity as ClaimsIdentity;
+                if (claimsIdentity != null)
+                {
+                    return claimsIdentity.Claims.Any(c => c.ClaimType == this.auth0Config.ConnectionClaimType) ?
+                        claimsIdentity.Claims.First(c => c.ClaimType == this.auth0Config.ConnectionClaimType).Value :
+                        string.Empty;
+                }
+
+                return string.Empty; 
+            }
         }
 
         /// <summary>
@@ -336,13 +358,18 @@
 
         protected virtual void ResolveInputBulk(string input, IEnumerable<ClaimAttribute> attributesToQuery, bool exactSearch)
         {
-            // TODO: perform search with Auth0 API
-            //var client = new Auth0.Client(
-            //    this.auth0Config.ClientId,
-            //    this.auth0Config.ClientSecret,
-            //    this.auth0Config.Domain);
-
             this.consolidatedResults = new List<ConsolidatedResult>();
+            
+            var client = new Auth0.Client(
+                this.auth0Config.ClientId,
+                this.auth0Config.ClientSecret,
+                this.auth0Config.Domain);
+
+            var connectionName = this.Auth0ConnectionName;
+            if (!string.IsNullOrEmpty(connectionName))
+            {
+                // var users = client.GetUsersByConnection(connectionName);
+            }
         }
 
         private void PopulateActualAttributesList()

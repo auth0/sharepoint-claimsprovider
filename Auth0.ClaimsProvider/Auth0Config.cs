@@ -9,11 +9,20 @@
         {
         }
 
+        public string ClientId { get; set; }
+
+        public string ClientSecret { get; set; }
+
+        public string Domain { get; set; }
+
         public List<ClaimAttribute> AttributesList { get; set; }
 
         public static Auth0Config GetDefaultSettings()
         {
             var config = new Auth0Config();
+            config.ClientId = "";
+            config.ClientSecret = "";
+            config.Domain = "";
             config.AttributesList = new List<ClaimAttribute>
             {
                 new ClaimAttribute

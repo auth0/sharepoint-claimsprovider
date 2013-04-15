@@ -86,12 +86,38 @@
 
         protected override void FillClaimTypes(List<string> claimTypes)
         {
-            throw new NotImplementedException();
+            if (claimTypes == null)
+            {
+                throw new ArgumentNullException("claimTypes");
+            }
+
+            if (this.attributesToQuery == null)
+            {
+                return;
+            }
+
+            foreach (var attribute in this.attributesToQuery.Where(a => !string.IsNullOrEmpty(a.ClaimType)))
+            {
+                claimTypes.Add(attribute.ClaimType);
+            }
         }
 
         protected override void FillClaimValueTypes(List<string> claimValueTypes)
         {
-            throw new NotImplementedException();
+            if (claimValueTypes == null)
+            {
+                throw new ArgumentNullException("claimValueTypes");
+            }
+
+            if (this.attributesToQuery == null)
+            {
+                return;
+            }
+
+            foreach (var attribute in this.attributesToQuery.Where(a => !string.IsNullOrEmpty(a.ClaimValueType)))
+            {
+                claimValueTypes.Add(attribute.ClaimValueType);
+            }
         }
 
         protected override void FillClaimsForEntity(Uri context, SPClaim entity, List<SPClaim> claims)
@@ -310,7 +336,12 @@
 
         protected virtual void ResolveInputBulk(string input, IEnumerable<ClaimAttribute> attributesToQuery, bool exactSearch)
         {
-            // TODO: perform search with AUth0 API
+            // TODO: perform search with Auth0 API
+            //var client = new Auth0.Client(
+            //    this.auth0Config.ClientId,
+            //    this.auth0Config.ClientSecret,
+            //    this.auth0Config.Domain);
+
             this.consolidatedResults = new List<ConsolidatedResult>();
         }
 

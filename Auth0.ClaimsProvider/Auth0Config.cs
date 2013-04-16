@@ -31,7 +31,14 @@
                 {
                     new ClaimAttribute
                     {
+                        Auth0AttributeName = "Email",
                         ClaimType = Microsoft.IdentityModel.Claims.ClaimTypes.Email, 
+                        ClaimEntityType = SPClaimEntityTypes.User
+                    },
+                    new ClaimAttribute
+                    {
+                        Auth0AttributeName = "Name",
+                        ClaimType = Microsoft.IdentityModel.Claims.ClaimTypes.Name, 
                         ClaimEntityType = SPClaimEntityTypes.User
                     }
                 }

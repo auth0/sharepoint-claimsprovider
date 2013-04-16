@@ -187,7 +187,8 @@
                 // First load
                 foreach (var attribute in this.attributesToQuery.Where(
                     a => !string.IsNullOrEmpty(a.PeoplePickerAttributeHierarchyNodeId) && 
-                         !a.ResolveAsIdentityClaim && entityTypes.Contains(a.ClaimEntityType)))
+                         !a.ResolveAsIdentityClaim && 
+                         entityTypes.Contains(a.ClaimEntityType)))
                 {
                     hierarchy.AddChild(
                         new Microsoft.SharePoint.WebControls.SPProviderHierarchyNode(
@@ -377,15 +378,15 @@
                 {
                     foreach (var attributeToQuery in attributesToQuery)
                     {
-                        var filter = attributeToQuery.PeoplePickerAttributeDisplayName;
-                        var query = attributeToQuery.PeoplePickerAttributeDisplayName +
-                                    (exactSearch ?
-                                        ".Equals(@0, @1)" :
-                                        ".IndexOf(@0, @1) > -1");
+                        var filter = attributeToQuery.Auth0AttributeName;
+                        var query = filter + (exactSearch ? ".Equals(@0, @1)" : ".IndexOf(@0, @1) > -1");
+
                         try
                         {
-                            var filteredUsers = users.AsQueryable().Where(query, input, StringComparison.OrdinalIgnoreCase)
-                                                                   .Select(u => new KeyValuePair<string, string>(filter, Helper.GetPropertyValue(u, filter).ToString()));
+                            var filteredUsers = users.AsQueryable()
+                                                     .Where(query, input, StringComparison.OrdinalIgnoreCase)
+                                                     .Select(u => new KeyValuePair<string, string>(filter, Helper.GetPropertyValue(u, filter).ToString()));
+                            
                             foreach (var user in filteredUsers)
                             {
                                 this.consolidatedResults.Add(new ConsolidatedResult
@@ -456,8 +457,9 @@
 
             // Check if attributes that should be always used are in the list, and add them if not
             var additionalAttributes = new Collection<ClaimAttribute>();
-            foreach (var attr in this.attributesDefinitionList.Where(
-                a => a.ResolveAsIdentityClaim == true && !attributesDefinedInTrust.Any(x => x.ClaimType == a.ClaimType)))
+            foreach (var attr in this.attributesDefinitionList.Where(a => 
+                a.ResolveAsIdentityClaim && 
+                !attributesDefinedInTrust.Any(x => x.ClaimType == a.ClaimType)))
             {
                 attr.ClaimType = this.associatedSPTrustedLoginProvider.IdentityClaimTypeInformation.MappedClaimType;
                 attr.ClaimEntityType = SPClaimEntityTypes.User;
@@ -469,7 +471,7 @@
             // Parse each attribute to configure its settings from the corresponding claim types defined in the SPTrustedLoginProvider
             foreach (var attr in this.attributesToQuery.Where(a => a.ClaimType != null))
             {
-                var trustedClaim = this.associatedSPTrustedLoginProvider.GetClaimTypeInformationFromMappedClaimType(attr.ClaimType);
+                var trustedClaim = this.associatedSPTrustedLoginProvider.GetClaimTypeInformationFromInputClaimType(attr.ClaimType);
                 if (trustedClaim == null)
                 {
                     continue;

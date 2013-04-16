@@ -14,6 +14,8 @@
 
         public string ClaimValueType { get; set; }
 
+        public string Auth0AttributeName { get; set; }
+
         /// <summary>
         /// What represents the attribute (a user, a role, a security group, etc.)
         /// </summary>

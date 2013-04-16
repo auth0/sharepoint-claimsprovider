@@ -33,7 +33,7 @@
                     {
                         ClaimType = Microsoft.IdentityModel.Claims.ClaimTypes.Email, 
                         ClaimEntityType = SPClaimEntityTypes.User
-                    },
+                    }
                 }
             };
 

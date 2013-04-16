@@ -3,6 +3,7 @@
     using System;
     using System.Linq;
     using Microsoft.SharePoint.Administration.Claims;
+    using Microsoft.SharePoint.WebControls;
 
     public class Helper
     {
@@ -29,6 +30,11 @@
 
             // string.Format("Claim provider '{0}' is not associated with any SPTrustedLoginProvider, and it cannot create permissions for a trust if it is not associated to it.\r\nUse PowerShell cmdlet Get-SPTrustedIdentityTokenIssuer to create association", ProviderInternalName)
             return null;
+        }
+
+        public static object GetPropertyValue(object src, string propertyName)
+        {
+            return src.GetType().GetProperty(propertyName).GetValue(src, null);
         }
     }
 }

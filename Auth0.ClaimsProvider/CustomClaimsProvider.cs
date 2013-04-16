@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Collections.ObjectModel;
     using System.Linq;
+    using System.Linq.Dynamic;
     using System.Net;
     using Microsoft.IdentityModel.Claims;
     using Microsoft.SharePoint;
@@ -14,10 +15,10 @@
     {
         private SPTrustedLoginProvider associatedSPTrustedLoginProvider; // Name of the SPTrustedLoginProvider associated with the claim provider
         private Auth0Config auth0Config;
-        private ClaimAttribute identityAttribute; // attribute mapped to the identity claim in the SPTrustedLoginProvider
+        private ClaimAttribute identityAttribute; // Attribute mapped to the identity claim in the SPTrustedLoginProvider
         private IEnumerable<ClaimAttribute> attributesToQuery;
         private IEnumerable<ClaimAttribute> attributesDefinitionList;
-        private IEnumerable<ConsolidatedResult> consolidatedResults;
+        private ICollection<ConsolidatedResult> consolidatedResults;
 
         public CustomClaimsProvider(string displayName)
             : base(displayName)
@@ -356,18 +357,80 @@
 
         protected virtual void ResolveInputBulk(string input, IEnumerable<ClaimAttribute> attributesToQuery, bool exactSearch)
         {
-            this.consolidatedResults = new List<ConsolidatedResult>();
-            
-            var client = new Auth0.Client(
-                this.auth0Config.ClientId,
-                this.auth0Config.ClientSecret,
-                this.auth0Config.Domain);
+            this.consolidatedResults = new Collection<ConsolidatedResult>();
+
+            if (string.IsNullOrEmpty(input) || attributesToQuery == null || attributesToQuery.Count() == 0)
+            {
+                return;
+            }
 
             var connectionName = this.Auth0ConnectionName;
             if (!string.IsNullOrEmpty(connectionName))
             {
-                // var users = client.GetUsersByConnection(connectionName);
+                var client = new Auth0.Client(
+                        this.auth0Config.ClientId,
+                        this.auth0Config.ClientSecret,
+                        this.auth0Config.Domain);
+
+                var users = client.GetUsersByConnection(connectionName);
+                if (users != null && users.Count() > 0)
+                {
+                    foreach (var attributeToQuery in attributesToQuery)
+                    {
+                        var filter = attributeToQuery.PeoplePickerAttributeDisplayName;
+                        var query = attributeToQuery.PeoplePickerAttributeDisplayName +
+                                    (exactSearch ?
+                                        ".Equals(@0, @1)" :
+                                        ".IndexOf(@0, @1) > -1");
+                        try
+                        {
+                            var filteredUsers = users.AsQueryable().Where(query, input, StringComparison.OrdinalIgnoreCase)
+                                                                   .Select(u => new KeyValuePair<string, string>(filter, Helper.GetPropertyValue(u, filter).ToString()));
+                            foreach (var user in filteredUsers)
+                            {
+                                this.consolidatedResults.Add(new ConsolidatedResult
+                                {
+                                    Attribute = attributeToQuery,
+                                    PickerEntity = this.GetPickerEntity(user.Value, attributeToQuery)
+                                });
+                            }
+                        }
+                        catch (ParseException)
+                        { 
+                            // Invalid filter
+                        }
+                    }
+                }
             }
+        }
+
+        protected virtual PickerEntity GetPickerEntity(string claimValue, ClaimAttribute attribute)
+        {
+            PickerEntity pe = this.CreatePickerEntity();
+
+            // Set the claim that is associated with this match
+            pe.Claim = this.CreateClaim(attribute.ClaimType, claimValue, attribute.ClaimValueType);
+
+            // Set the tooltip that is displayed when you pause over the resolved claim
+            pe.Description = ProviderDisplayName + ": " + claimValue;
+
+            // Set the text that we will display
+            pe.DisplayText = claimValue;
+
+            // Store it here, in the hashtable **
+            pe.EntityData[PeopleEditorEntityDataKeys.DisplayName] = claimValue;
+
+            pe.EntityType = attribute.ClaimEntityType;
+
+            // Flag the entry as being resolved
+            pe.IsResolved = true;
+
+            // This is the first part of the description that shows
+            // above the matches, like Role: Forms Auth when
+            // you do an forms-based authentication search and find a matching role.
+            pe.EntityGroupName = "Results";
+
+            return pe;
         }
 
         private void PopulateActualAttributesList()

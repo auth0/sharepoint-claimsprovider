@@ -4,13 +4,11 @@
     using System.Collections.Generic;
     using System.Collections.ObjectModel;
     using System.Linq;
+    using System.Net;
     using Microsoft.IdentityModel.Claims;
     using Microsoft.SharePoint;
     using Microsoft.SharePoint.Administration.Claims;
     using Microsoft.SharePoint.WebControls;
-    using RestSharp;
-    using System.Net;
-    using Newtonsoft.Json;
 
     public class CustomClaimsProvider : SPClaimProvider
     {

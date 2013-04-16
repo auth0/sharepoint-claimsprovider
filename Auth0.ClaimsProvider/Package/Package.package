@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <package xmlns:dm0="http://schemas.microsoft.com/VisualStudio/2008/DslTools/Core" dslVersion="1.0.0.0" Id="7d1c1a7c-a9d2-4538-b969-cd702c737bf3" solutionId="7d1c1a7c-a9d2-4538-b969-cd702c737bf3" resetWebServer="false" name="Auth0.ClaimsProvider" xmlns="http://schemas.microsoft.com/VisualStudio/2008/SharePointTools/PackageModel">
   <assemblies>
-    <customAssembly location="AUth0Merged.dll" deploymentTarget="GlobalAssemblyCache" sourcePath="..\AUth0Merged.dll" />
+    <customAssembly location="Auth0Merged.dll" deploymentTarget="GlobalAssemblyCache" sourcePath="..\packages\Auth0.1.0.10\lib\Auth0Merged.dll" />
   </assemblies>
   <features>
     <featureReference itemId="8adcc9c5-ea3f-4562-b8f6-5eb576ec2f72" />

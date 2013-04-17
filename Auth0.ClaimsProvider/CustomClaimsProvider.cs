@@ -13,6 +13,9 @@
 
     public class CustomClaimsProvider : SPClaimProvider
     {
+        private const string SocialHierarchyNodeID = "social";
+        private const string EnterpriseHierarchyNodeID = "enterprise";
+
         private SPTrustedLoginProvider associatedSPTrustedLoginProvider; // Name of the SPTrustedLoginProvider associated with the claim provider
         private Auth0.Client auth0Client;
         private Auth0Config auth0Config;
@@ -202,16 +205,43 @@
 
             if (hierarchyNodeID == null)
             {
-                // First load
-                foreach (var connection in this.auth0Client.GetConnections().Where(c => c.Enabled))
+                // Enterprise nodes
+                var enterpriseChild = new Microsoft.SharePoint.WebControls.SPProviderHierarchyNode(
+                    ProviderInternalName,
+                    "Enterprise",
+                    EnterpriseHierarchyNodeID, // hierarchyNodeID
+                    false);
+
+                foreach (var connection in this.auth0Client.GetEnterpriseConnections().Where(c => c.Enabled))
                 {
-                    hierarchy.AddChild(
+                    enterpriseChild.AddChild(
                         new Microsoft.SharePoint.WebControls.SPProviderHierarchyNode(
                             ProviderInternalName,
                             connection.Name,
                             connection.Name, // hierarchyNodeID
                             true));
                 }
+
+                hierarchy.AddChild(enterpriseChild);
+
+                // Social nodes
+                var socialChild = new Microsoft.SharePoint.WebControls.SPProviderHierarchyNode(
+                    ProviderInternalName,
+                    "Social",
+                    SocialHierarchyNodeID, // hierarchyNodeID
+                    false);
+
+                foreach (var connection in this.auth0Client.GetSocialConnections().Where(c => c.Enabled))
+                {
+                    socialChild.AddChild(
+                        new Microsoft.SharePoint.WebControls.SPProviderHierarchyNode(
+                            ProviderInternalName,
+                            connection.Name,
+                            connection.Name, // hierarchyNodeID
+                            true));
+                }
+
+                hierarchy.AddChild(socialChild);
             }
         }
 
@@ -345,7 +375,13 @@
                         }
                         else
                         {
-                            matchNode = new SPProviderHierarchyNode(ProviderInternalName, consolidatedResult.Attribute.PeoplePickerAttributeDisplayName, consolidatedResult.Attribute.PeoplePickerAttributeHierarchyNodeId, true);
+                            matchNode = new SPProviderHierarchyNode(
+                                ProviderInternalName, 
+                                consolidatedResult.Attribute.PeoplePickerAttributeDisplayName, 
+                                consolidatedResult.Attribute.PeoplePickerAttributeHierarchyNodeId, 
+                                true);
+
+                            // TODO: include Social/Enterprise parent nodes
                             searchTree.AddChild(matchNode);
                         }
 

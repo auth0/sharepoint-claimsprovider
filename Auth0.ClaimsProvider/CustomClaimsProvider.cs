@@ -254,7 +254,7 @@
                     Collection<PickerEntity> entities = this.CreatePickerEntityForEachClaimType(resolveInput.Value);
                     if (entities != null)
                     {
-                        resolved.Add(entities.Where(x => x.Claim.ClaimType == resolveInput.ClaimType).FirstOrDefault());
+                        resolved.Add(entities.Where(e => e.Claim.ClaimType == resolveInput.ClaimType).FirstOrDefault());
                     }
                 }
             });
@@ -649,7 +649,7 @@
                 return;
             }
 
-            // Check if attributes that should be always used (AttributeUsage.AlwaysSearchAgainstLDAP) are in the list, and add them if not
+            // Check if attributes that should be always used are in the list, and add them if not
             var additionalAttributes = new Collection<ClaimAttribute>();
             foreach (var attr in this.attributesDefinitionList.Where(
                 a => a.ResolveAsIdentityClaim == true && !attributesDefinedInTrust.Any(at => at.Auth0AttributeName == a.Auth0AttributeName)))

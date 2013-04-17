@@ -32,7 +32,7 @@
                 Domain = "iaco.auth0.com",
                 ConnectionClaimType = "http://schemas.auth0.com/connection",
                 Auth0ValueToDisplayForIdentityAttribute = null,
-                AlwaysResolveUserInput = false,
+                AlwaysResolveUserInput = true,
                 AttributesList = new List<ClaimAttribute>
                 {
                     new ClaimAttribute

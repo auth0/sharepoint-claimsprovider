@@ -203,7 +203,7 @@
             if (hierarchyNodeID == null)
             {
                 // First load
-                foreach (var connection in this.auth0Client.GetConnections())
+                foreach (var connection in this.auth0Client.GetConnections().Where(c => c.Enabled))
                 {
                     hierarchy.AddChild(
                         new Microsoft.SharePoint.WebControls.SPProviderHierarchyNode(

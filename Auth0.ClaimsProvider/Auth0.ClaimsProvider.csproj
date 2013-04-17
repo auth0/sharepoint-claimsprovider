@@ -104,4 +104,5 @@ exit
 
 "%25WinDir%25\Microsoft.NET\Framework\v2.0.50727\ilasm.exe" /dll /key="$(ProjectDir)\key.snk" "$(SolutionDir)\packages\Auth0.1.0.10\lib\Auth0Merged.il" /out="$(SolutionDir)\packages\Auth0.1.0.10\lib\Auth0Merged.dll"</PreBuildEvent>
   </PropertyGroup>
+  <Import Project="$(SolutionDir)\.nuget\nuget.targets" />
 </Project>

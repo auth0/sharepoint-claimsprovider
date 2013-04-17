@@ -84,7 +84,8 @@ publish
 
 # NuGet
 packages
-.nuget
+NuGet.exe
+NuGet.Config
 
 # Windows Azure Build Output
 csx

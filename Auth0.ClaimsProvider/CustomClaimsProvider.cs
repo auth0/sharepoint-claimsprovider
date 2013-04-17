@@ -14,6 +14,7 @@
     public class CustomClaimsProvider : SPClaimProvider
     {
         private SPTrustedLoginProvider associatedSPTrustedLoginProvider; // Name of the SPTrustedLoginProvider associated with the claim provider
+        private Auth0.Client auth0Client;
         private Auth0Config auth0Config;
         private ClaimAttribute identityAttribute; // Attribute mapped to the identity claim in the SPTrustedLoginProvider
         private IEnumerable<ClaimAttribute> attributesToQuery;
@@ -202,16 +203,13 @@
             if (hierarchyNodeID == null)
             {
                 // First load
-                foreach (var attribute in this.attributesToQuery.Where(
-                    a => !string.IsNullOrEmpty(a.PeoplePickerAttributeHierarchyNodeId) && 
-                         !a.ResolveAsIdentityClaim && 
-                         entityTypes.Contains(a.ClaimEntityType)))
+                foreach (var connection in this.auth0Client.GetConnections())
                 {
                     hierarchy.AddChild(
                         new Microsoft.SharePoint.WebControls.SPProviderHierarchyNode(
                             ProviderInternalName,
-                            attribute.PeoplePickerAttributeDisplayName,
-                            attribute.PeoplePickerAttributeHierarchyNodeId,
+                            connection.Name,
+                            connection.Name, // hierarchyNodeID
                             true));
                 }
             }
@@ -395,6 +393,12 @@
             {
                 this.auth0Config = Auth0Config.GetDefaultSettings();
 
+                // TODO: validate clientId, clientSecret and domain
+                this.auth0Client = new Auth0.Client(
+                    this.auth0Config.ClientId,
+                    this.auth0Config.ClientSecret,
+                    this.auth0Config.Domain);
+
                 this.alwaysResolveValue = this.auth0Config.AlwaysResolveUserInput;
                 this.identityValueDisplay = IdentityValueDisplay.IdentityValue;
                 this.attributesDefinitionList = this.auth0Config.AttributesList;
@@ -414,18 +418,16 @@
             var connectionName = this.Auth0ConnectionName;
             if (!string.IsNullOrEmpty(connectionName))
             {
-                var client = new Auth0.Client(
-                        this.auth0Config.ClientId,
-                        this.auth0Config.ClientSecret,
-                        this.auth0Config.Domain);
-
-                var users = client.GetUsersByConnection(connectionName);
+                var users = this.auth0Client.GetUsersByConnection(connectionName);
                 if (users != null && users.Count() > 0)
                 {
                     foreach (var attributeToQuery in attributesToQuery)
                     {
                         var filter = attributeToQuery.Auth0AttributeName;
                         var query = filter + (exactSearch ? ".Equals(@0, @1)" : ".IndexOf(@0, @1) > -1");
+
+                        attributeToQuery.PeoplePickerAttributeDisplayName = connectionName;
+                        attributeToQuery.PeoplePickerAttributeHierarchyNodeId = connectionName;
 
                         try
                         {
@@ -658,19 +660,6 @@
             }
 
             this.attributesToQuery = attributesDefinedInTrust.Union(additionalAttributes);
-
-            // Parse each attribute to configure its settings from the corresponding claim types defined in the SPTrustedLoginProvider
-            foreach (var attr in this.attributesToQuery.Where(a => a.ClaimType != null))
-            {
-                var trustedClaim = this.associatedSPTrustedLoginProvider.GetClaimTypeInformationFromMappedClaimType(attr.ClaimType);
-                if (trustedClaim == null)
-                {
-                    continue;
-                }
-
-                attr.PeoplePickerAttributeDisplayName = trustedClaim.DisplayName;
-                attr.PeoplePickerAttributeHierarchyNodeId = trustedClaim.InputClaimType;
-            }
 
             // Get identity attribute from SPTrustedLoginProvider configuration
             this.identityAttribute = this.attributesToQuery.Where(

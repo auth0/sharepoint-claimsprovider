@@ -94,15 +94,15 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v10.0\SharePointTools\Microsoft.VisualStudio.SharePoint.targets" />
   <PropertyGroup>
-    <PreBuildEvent>IF EXIST "$(SolutionDir)\packages\Auth0.1.0.10\lib\Auth0Merged.dll" (
+    <PreBuildEvent>IF EXIST "$(SolutionDir)\packages\Auth0.1.0.20\lib\Auth0Merged.dll" (
 exit
 )
 
-"%25ProgramFiles(x86)%25\Microsoft\ILMerge\ilmerge" /out:"$(SolutionDir)\packages\Auth0.1.0.10\lib\Auth0Merged.dll" "$(SolutionDir)\packages\Auth0.1.0.10\lib\Auth0.dll" "$(SolutionDir)\packages\RestSharp.104.1\lib\net35\RestSharp.dll" "$(SolutionDir)\packages\Newtonsoft.Json.4.5.11\lib\net35\Newtonsoft.Json.dll" /allowDup
+"%25ProgramFiles(x86)%25\Microsoft\ILMerge\ilmerge" /out:"$(SolutionDir)\packages\Auth0.1.0.20\lib\Auth0Merged.dll" "$(SolutionDir)\packages\Auth0.1.0.20\lib\Auth0.dll" "$(SolutionDir)\packages\RestSharp.104.1\lib\net35\RestSharp.dll" "$(SolutionDir)\packages\Newtonsoft.Json.4.5.11\lib\net35\Newtonsoft.Json.dll" /allowDup
 
-"%25ProgramFiles(x86)%25\Microsoft SDKs\Windows\v7.0A\Bin\NETFX 4.0 Tools\x64\ildasm.exe" /all /out="$(SolutionDir)\packages\Auth0.1.0.10\lib\Auth0Merged.il" "$(SolutionDir)\packages\Auth0.1.0.10\lib\Auth0Merged.dll"
+"%25ProgramFiles(x86)%25\Microsoft SDKs\Windows\v7.0A\Bin\NETFX 4.0 Tools\x64\ildasm.exe" /all /out="$(SolutionDir)\packages\Auth0.1.0.20\lib\Auth0Merged.il" "$(SolutionDir)\packages\Auth0.1.0.20\lib\Auth0Merged.dll"
 
-"%25WinDir%25\Microsoft.NET\Framework\v2.0.50727\ilasm.exe" /dll /key="$(ProjectDir)\key.snk" "$(SolutionDir)\packages\Auth0.1.0.10\lib\Auth0Merged.il" /out="$(SolutionDir)\packages\Auth0.1.0.10\lib\Auth0Merged.dll"</PreBuildEvent>
+"%25WinDir%25\Microsoft.NET\Framework\v2.0.50727\ilasm.exe" /dll /key="$(ProjectDir)\key.snk" "$(SolutionDir)\packages\Auth0.1.0.20\lib\Auth0Merged.il" /out="$(SolutionDir)\packages\Auth0.1.0.20\lib\Auth0Merged.dll"</PreBuildEvent>
   </PropertyGroup>
   <Import Project="$(SolutionDir)\.nuget\nuget.targets" />
 </Project>

@@ -34,7 +34,8 @@
 
         public static object GetPropertyValue(object src, string propertyName)
         {
-            return src.GetType().GetProperty(propertyName).GetValue(src, null);
+            var property = src.GetType().GetProperty(propertyName);
+            return property != null ? property.GetValue(src, null) : string.Empty;
         }
     }
 }

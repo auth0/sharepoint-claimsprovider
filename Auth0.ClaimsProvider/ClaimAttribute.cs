@@ -17,6 +17,11 @@
         public string Auth0AttributeName { get; set; }
 
         /// <summary>
+        /// When creating a PickerEntry, it's possible to populate entry with additional attributes stored in EntityData hash table
+        /// </summary>
+        public string PeopleEditorEntityDataKey { get; set; }
+
+        /// <summary>
         /// What represents the attribute (a user, a role, a security group, etc.)
         /// </summary>
         public string ClaimEntityType { get; set; }

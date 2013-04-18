@@ -4,9 +4,8 @@
     using System.Collections.Generic;
     using System.Collections.ObjectModel;
     using System.Linq;
-    using System.Linq.Dynamic;
     using System.Net;
-    using Microsoft.IdentityModel.Claims;
+    using Auth0.ClaimsProvider.Configuration;
     using Microsoft.SharePoint;
     using Microsoft.SharePoint.Administration.Claims;
     using Microsoft.SharePoint.WebControls;
@@ -15,6 +14,8 @@
     {
         private const string SocialHierarchyNode = "Social";
         private const string EnterpriseHierarchyNode = "Enterprise";
+
+        private readonly IConfigurationRepository configurationRepository;
 
         private SPTrustedLoginProvider associatedSPTrustedLoginProvider; // Name of the SPTrustedLoginProvider associated with the claim provider
         private Auth0.Client auth0Client;
@@ -28,12 +29,19 @@
         private bool alwaysResolveValue;
 
         public CustomClaimsProvider(string displayName)
+            : this(displayName, new ConfigurationRepository())
+        { 
+        }
+
+        public CustomClaimsProvider(string displayName, IConfigurationRepository configurationRepository)
             : base(displayName)
         {
             if (SPContext.Current == null)
             {
                 return;
             }
+
+            this.configurationRepository = configurationRepository;
 
             // TODO: remove this
             ServicePointManager.ServerCertificateValidationCallback += delegate { return true; };
@@ -91,7 +99,7 @@
 
         protected virtual string PickerEntityOnMouseOver
         {
-            get { return "[{0}] {1}={2}"; }
+            get { return "[{0}] {1} = {2}"; }
         }
 
         protected virtual string PickerEntityOnMouseOverAdditionalAttribute
@@ -355,7 +363,7 @@
             this.associatedSPTrustedLoginProvider = Helper.GetSPTrustAssociatedWithCP(ProviderInternalName);
             if (this.associatedSPTrustedLoginProvider != null)
             {
-                this.auth0Config = Auth0Config.GetDefaultSettings();
+                this.auth0Config = this.configurationRepository.GetConfiguration();
 
                 // TODO: validate clientId, clientSecret and domain
                 this.auth0Client = new Auth0.Client(

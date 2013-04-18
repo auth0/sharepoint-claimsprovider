@@ -1,0 +1,114 @@
+﻿<%@ Assembly Name="$SharePoint.Project.AssemblyFullName$" %>
+<%@ Import Namespace="Microsoft.SharePoint.ApplicationPages" %>
+<%@ Register TagPrefix="SharePoint" Namespace="Microsoft.SharePoint.WebControls"
+    Assembly="Microsoft.SharePoint, Version=14.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c" %>
+<%@ Register TagPrefix="Utilities" Namespace="Microsoft.SharePoint.Utilities" Assembly="Microsoft.SharePoint, Version=14.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c" %>
+<%@ Register TagPrefix="asp" Namespace="System.Web.UI" Assembly="System.Web.Extensions, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" %>
+<%@ Import Namespace="Microsoft.SharePoint" %>
+<%@ Assembly Name="Microsoft.Web.CommandUI, Version=14.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c" %>
+
+<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="Settings.aspx.cs" Inherits="Auth0.ClaimsProvider.AdminWeb.Settings"
+    MasterPageFile="~/_admin/admin.master" %>
+
+<%@ Register TagPrefix="wssuc" TagName="InputFormSection" Src="~/_controltemplates/InputFormSection.ascx" %>
+<%@ Register TagPrefix="wssuc" TagName="InputFormControl" Src="~/_controltemplates/InputFormControl.ascx" %>
+<%@ Register TagPrefix="wssuc" TagName="ButtonSection" Src="~/_controltemplates/ButtonSection.ascx" %>
+<%@ Register TagPrefix="wssawc" Namespace="Microsoft.SharePoint.WebControls" Assembly="Microsoft.SharePoint, Version=14.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c" %>
+
+<asp:Content ID="PageHead" ContentPlaceHolderID="PlaceHolderAdditionalPageHead" runat="server">
+</asp:Content>
+
+<asp:Content ID="Main" ContentPlaceHolderID="PlaceHolderMain" runat="server">
+    <table width="100%" class="propertysheet" cellspacing="0" cellpadding="0" border="0">
+        <tr>
+            <td class="ms-descriptionText">
+                <asp:Label ID="LabelMessage" runat="server" EnableViewState="False" class="ms-descriptionText" />
+            </td>
+        </tr>
+        <tr>
+            <td class="ms-error">
+                <asp:Label ID="LabelErrorMessage" runat="server" EnableViewState="False" />
+            </td>
+        </tr>
+        <tr>
+            <td class="ms-descriptionText">
+                <asp:ValidationSummary ID="ValSummary" HeaderText="<%$SPHtmlEncodedResources:spadmin, ValidationSummaryHeaderText%>"
+                    DisplayMode="BulletList" ShowSummary="True" runat="server"></asp:ValidationSummary>
+            </td>
+        </tr>
+    </table>
+
+    <style>
+        .ms-inputformcontrols
+        {
+            width: 500px;
+        }
+    </style>
+
+    <table border="0" cellspacing="0" cellpadding="0" width="100%">
+        <wssuc:ButtonSection runat="server">
+            <template_buttons>
+			    <asp:Button UseSubmitBehavior="false" runat="server" class="ms-ButtonHeightWidth" OnClick="BtnOK_Click" Text="<%$Resources:wss,multipages_okbutton_text%>" id="BtnOKTop" accesskey="<%$Resources:wss,okbutton_accesskey%>"/>
+		    </template_buttons>
+        </wssuc:ButtonSection>
+
+        <wssuc:InputFormSection Title="Auth0 settings" runat="server">
+            <template_description>
+			    <SharePoint:EncodedLiteral ID="EncodedLiteral1" runat="server" text="Specify Auth0 settings" EncodeMethod='HtmlEncodeAllowSimpleTextFormatting'/>
+		    </template_description>
+            
+            <template_inputformcontrols>
+
+			    <table border="0" width="100%" cellspacing="0" cellpadding="0" class="authoringcontrols">
+				    <wssuc:InputFormControl ID="InputFormControl1" LabelText="InputFormControlLabelText">
+					    <Template_control>
+						    <SharePoint:EncodedLiteral ID="EncodedLiteral3" runat="server" text="Domain (for example contoso.auth0.com):" EncodeMethod='HtmlEncode'/>
+						    <br/>
+						    <wssawc:InputFormTextBox title="Domain" class="ms-input" ID="DomainTextBox" Columns="50" Runat="server" MaxLength=255 Text=".auth0.com" />
+						    <br/>
+					    </Template_control>
+				    </wssuc:InputFormControl>
+				    <wssuc:InputFormControl ID="InputFormControl2" LabelText="InputFormControlLabelText">
+					    <Template_control>
+						    <br/>
+						    <SharePoint:EncodedLiteral ID="EncodedLiteral4" runat="server" text="Client ID:" EncodeMethod='HtmlEncode'/>
+						    <br/>
+						    <wssawc:InputFormTextBox title="Client ID" class="ms-input" ID="ClientIdTextBox" Columns="50" Runat="server" MaxLength=255 />
+						    <br/>
+					    </Template_control>
+				    </wssuc:InputFormControl>
+				    <wssuc:InputFormControl ID="InputFormControl3" LabelText="InputFormControlLabelText">
+					    <Template_control>
+						    <br/>
+						    <SharePoint:EncodedLiteral ID="EncodedLiteral5" runat="server" text="Client Secret:" EncodeMethod='HtmlEncode'/>
+						    <br/>
+						    <wssawc:InputFormTextBox title="Client Secret" class="ms-input" ID="ClientSecretTextBox" Columns="50" Runat="server" MaxLength=255 />
+						    <br/>
+					    </Template_control>
+				    </wssuc:InputFormControl>
+			    </table>
+
+		    </template_inputformcontrols>
+        </wssuc:InputFormSection>
+
+        <wssuc:InputFormSection runat="server" Title="Always resolve the user input" Description="Always display the input that user types as resolved even if it does not exist in the directory" id="IFSGeneralSettings">
+            <template_inputformcontrols>
+				<asp:Checkbox Checked="false" Runat="server" Name="AlwaysResolveUserInputCheckbox" ID="AlwaysResolveUserInputCheckbox" Text="Always resolve the user input" />
+			</template_inputformcontrols>
+        </wssuc:InputFormSection>
+        
+        <wssuc:ButtonSection runat="server">
+            <template_buttons>
+			    <asp:Button UseSubmitBehavior="false" runat="server" class="ms-ButtonHeightWidth" OnClick="BtnOK_Click" Text="<%$Resources:wss,multipages_okbutton_text%>" id="BtnOK" accesskey="<%$Resources:wss,okbutton_accesskey%>"/>
+		    </template_buttons>
+        </wssuc:ButtonSection>
+    </table>
+</asp:Content>
+
+<asp:Content ID="PageTitle" ContentPlaceHolderID="PlaceHolderPageTitle" runat="server">
+    Auth0 Configuration
+</asp:Content>
+
+<asp:Content ID="PageTitleInTitleArea" ContentPlaceHolderID="PlaceHolderPageTitleInTitleArea" runat="server">
+    Auth0 Configuration
+</asp:Content>

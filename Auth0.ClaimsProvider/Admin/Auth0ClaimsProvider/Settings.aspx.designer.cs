@@ -40,15 +40,6 @@ namespace Auth0.ClaimsProvider.AdminWeb {
         protected global::System.Web.UI.WebControls.ValidationSummary ValSummary;
         
         /// <summary>
-        /// BtnOKTop control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Button BtnOKTop;
-        
-        /// <summary>
         /// EncodedLiteral1 control.
         /// </summary>
         /// <remarks>
@@ -112,13 +103,13 @@ namespace Auth0.ClaimsProvider.AdminWeb {
         protected global::Microsoft.SharePoint.WebControls.InputFormTextBox ClientSecretTextBox;
         
         /// <summary>
-        /// IFSGeneralSettings control.
+        /// IFSGeneralSettings1 control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.UserControl IFSGeneralSettings;
+        protected global::System.Web.UI.UserControl IFSGeneralSettings1;
         
         /// <summary>
         /// AlwaysResolveUserInputCheckbox control.
@@ -128,6 +119,24 @@ namespace Auth0.ClaimsProvider.AdminWeb {
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.CheckBox AlwaysResolveUserInputCheckbox;
+        
+        /// <summary>
+        /// IFSGeneralSettings2 control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.UserControl IFSGeneralSettings2;
+        
+        /// <summary>
+        /// PickerEntityGroupNameTextBox control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::Microsoft.SharePoint.WebControls.InputFormTextBox PickerEntityGroupNameTextBox;
         
         /// <summary>
         /// BtnOK control.

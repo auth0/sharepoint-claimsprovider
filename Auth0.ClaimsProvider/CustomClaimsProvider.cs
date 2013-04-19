@@ -527,7 +527,7 @@
 
             pe.Claim = claim;
             pe.IsResolved = true;
-            pe.EntityGroupName = "Results";
+            pe.EntityGroupName = this.auth0Config.PickerEntityGroupName;
 
             if (attribute.ClaimEntityType == SPClaimEntityTypes.User)
             {

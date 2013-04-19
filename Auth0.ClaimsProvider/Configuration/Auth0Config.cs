@@ -20,6 +20,9 @@
         [Persisted]
         private bool alwaysResolveUserInput;
 
+        [Persisted]
+        private string pickerEntityGroupName;
+
         public Auth0Config()
         {
         }
@@ -55,6 +58,13 @@
             get { return this.alwaysResolveUserInput; }
 
             set { this.alwaysResolveUserInput = value; }
+        }
+
+        public string PickerEntityGroupName
+        {
+            get { return this.pickerEntityGroupName; }
+
+            set { this.pickerEntityGroupName = value; }
         }
 
         public string Auth0ValueToDisplayForIdentityAttribute { get; set; }

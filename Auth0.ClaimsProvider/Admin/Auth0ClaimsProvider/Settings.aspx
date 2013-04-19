@@ -41,20 +41,14 @@
     <style>
         .ms-inputformcontrols
         {
-            width: 500px;
+            width: 480px;
         }
     </style>
 
     <table border="0" cellspacing="0" cellpadding="0" width="100%">
-        <wssuc:ButtonSection runat="server">
-            <template_buttons>
-			    <asp:Button UseSubmitBehavior="false" runat="server" class="ms-ButtonHeightWidth" OnClick="BtnOK_Click" Text="<%$Resources:wss,multipages_okbutton_text%>" id="BtnOKTop" accesskey="<%$Resources:wss,okbutton_accesskey%>"/>
-		    </template_buttons>
-        </wssuc:ButtonSection>
-
         <wssuc:InputFormSection Title="Auth0 settings" runat="server">
             <template_description>
-			    <SharePoint:EncodedLiteral ID="EncodedLiteral1" runat="server" text="Specify Auth0 settings" EncodeMethod='HtmlEncodeAllowSimpleTextFormatting'/>
+			    <SharePoint:EncodedLiteral ID="EncodedLiteral1" runat="server" text="Specify Auth0 settings." EncodeMethod='HtmlEncodeAllowSimpleTextFormatting'/>
 		    </template_description>
             
             <template_inputformcontrols>
@@ -64,7 +58,7 @@
 					    <Template_control>
 						    <SharePoint:EncodedLiteral ID="EncodedLiteral3" runat="server" text="Domain (for example contoso.auth0.com):" EncodeMethod='HtmlEncode'/>
 						    <br/>
-						    <wssawc:InputFormTextBox title="Domain" class="ms-input" ID="DomainTextBox" Columns="50" Runat="server" MaxLength=255 Text=".auth0.com" />
+						    <wssawc:InputFormTextBox title="Domain" class="ms-input" ID="DomainTextBox" Runat="server" Columns="30" MaxLength="255" />
 						    <br/>
 					    </Template_control>
 				    </wssuc:InputFormControl>
@@ -73,7 +67,7 @@
 						    <br/>
 						    <SharePoint:EncodedLiteral ID="EncodedLiteral4" runat="server" text="Client ID:" EncodeMethod='HtmlEncode'/>
 						    <br/>
-						    <wssawc:InputFormTextBox title="Client ID" class="ms-input" ID="ClientIdTextBox" Columns="50" Runat="server" MaxLength=255 />
+						    <wssawc:InputFormTextBox title="Client ID" class="ms-input" ID="ClientIdTextBox" Runat="server" Width="100%" MaxLength="255" />
 						    <br/>
 					    </Template_control>
 				    </wssuc:InputFormControl>
@@ -82,18 +76,26 @@
 						    <br/>
 						    <SharePoint:EncodedLiteral ID="EncodedLiteral5" runat="server" text="Client Secret:" EncodeMethod='HtmlEncode'/>
 						    <br/>
-						    <wssawc:InputFormTextBox title="Client Secret" class="ms-input" ID="ClientSecretTextBox" Columns="50" Runat="server" MaxLength=255 />
+						    <wssawc:InputFormTextBox title="Client Secret" class="ms-input" ID="ClientSecretTextBox" Runat="server" Width="100%" MaxLength="255" />
 						    <br/>
 					    </Template_control>
 				    </wssuc:InputFormControl>
 			    </table>
-
+                <br|
 		    </template_inputformcontrols>
         </wssuc:InputFormSection>
 
-        <wssuc:InputFormSection runat="server" Title="Always resolve the user input" Description="Always display the input that user types as resolved even if it does not exist in the directory" id="IFSGeneralSettings">
+        <wssuc:InputFormSection runat="server" Title="Always resolve the user input" Description="Always display the input that user types as resolved even if it does not exist." id="IFSGeneralSettings1">
             <template_inputformcontrols>
-				<asp:Checkbox Checked="false" Runat="server" Name="AlwaysResolveUserInputCheckbox" ID="AlwaysResolveUserInputCheckbox" Text="Always resolve the user input" />
+				<asp:Checkbox Checked="false" Runat="server" Name="AlwaysResolveUserInputCheckbox" 
+                              ID="AlwaysResolveUserInputCheckbox" Text="Always resolve the user input" />
+			</template_inputformcontrols>
+        </wssuc:InputFormSection>
+
+        <wssuc:InputFormSection runat="server" Title="People picker display text" Description="This text is displayed in the header of the results list in the people picker control." id="IFSGeneralSettings2">
+            <template_inputformcontrols>
+				<wssawc:InputFormTextBox title="Text to display" class="ms-input" ID="PickerEntityGroupNameTextBox" 
+                                         Columns="30" Runat="server" MaxLength="255" />
 			</template_inputformcontrols>
         </wssuc:InputFormSection>
         

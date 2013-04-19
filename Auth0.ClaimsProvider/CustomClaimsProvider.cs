@@ -21,12 +21,9 @@
         private Auth0.Client auth0Client;
         private Auth0Config auth0Config;
         private ClaimAttribute identityAttribute; // Attribute mapped to the identity claim in the SPTrustedLoginProvider
-        private IEnumerable<ClaimAttribute> attributesToQuery;
-        private IEnumerable<ClaimAttribute> attributesDefinitionList;
         private ICollection<ConsolidatedResult> consolidatedResults;
-        private IdentityValueDisplay identityValueDisplay;
-        private ClaimAttribute auth0ValueToDisplayForIdentityAttribute;
         private bool alwaysResolveValue;
+        private string pickerEntityGroupName;
 
         public CustomClaimsProvider(string displayName)
             : this(displayName, new ConfigurationRepository())
@@ -107,23 +104,6 @@
             get { return "[{0}] {1} ({2} = {3})"; }
         }
 
-        /// <summary>
-        /// List of attributes actually defined in the trust + list of Auth0 attributes that are always queried
-        /// </summary>
-        protected IEnumerable<ClaimAttribute> AttributesToQuery
-        {
-            get { return this.attributesToQuery; }
-        }
-
-        /// <summary>
-        /// List of attributes with the claim type they are associated with.
-        /// The claim provider will only search against attributes in this list.
-        /// </summary>
-        protected IEnumerable<ClaimAttribute> AttributesDefinitionList
-        {
-            get { return this.attributesDefinitionList; }
-        }
-
         protected override void FillClaimTypes(List<string> claimTypes)
         {
             if (claimTypes == null)
@@ -131,15 +111,12 @@
                 throw new ArgumentNullException("claimTypes");
             }
 
-            if (this.attributesToQuery == null)
+            if (this.identityAttribute == null)
             {
                 return;
             }
 
-            foreach (var attribute in this.attributesToQuery.Where(a => !string.IsNullOrEmpty(a.ClaimType)))
-            {
-                claimTypes.Add(attribute.ClaimType);
-            }
+            claimTypes.Add(this.identityAttribute.ClaimType);
         }
 
         protected override void FillClaimValueTypes(List<string> claimValueTypes)
@@ -149,15 +126,12 @@
                 throw new ArgumentNullException("claimValueTypes");
             }
 
-            if (this.attributesToQuery == null)
+            if (this.identityAttribute == null)
             {
                 return;
             }
 
-            foreach (var attribute in this.attributesToQuery.Where(a => !string.IsNullOrEmpty(a.ClaimValueType)))
-            {
-                claimValueTypes.Add(attribute.ClaimValueType);
-            }
+            claimValueTypes.Add(this.identityAttribute.ClaimValueType);
         }
 
         protected override void FillClaimsForEntity(Uri context, SPClaim entity, List<SPClaim> claims)
@@ -167,30 +141,17 @@
 
         protected override void FillEntityTypes(List<string> entityTypes)
         {
-            if (this.attributesToQuery == null)
+            if (this.identityAttribute == null)
             {
                 return;
             }
 
-            var uniqueEntitytypes = from attributes in this.attributesToQuery
-                                    where attributes.ClaimEntityType != null
-                                    group attributes by new { attributes.ClaimEntityType } into groupedByEntityType
-                                    select new { value = groupedByEntityType.Key.ClaimEntityType };
-
-            if (uniqueEntitytypes == null)
-            {
-                return;
-            }
-
-            foreach (var entityType in uniqueEntitytypes)
-            {
-                entityTypes.Add(entityType.value);
-            }
+            entityTypes.Add(this.identityAttribute.ClaimEntityType);
         }
 
         protected override void FillHierarchy(Uri context, string[] entityTypes, string hierarchyNodeID, int numberOfLevels, SPProviderHierarchyTree hierarchy)
         {
-            if (this.attributesToQuery == null)
+            if (this.identityAttribute == null)
             {
                 return;
             }
@@ -211,7 +172,7 @@
                 return;
             }
 
-            if (this.attributesToQuery == null)
+            if (this.identityAttribute == null)
             {
                 return;
             }
@@ -220,8 +181,8 @@
             {
                 this.Initialize();
 
-                // TODO: Resolve value only against the incoming claim type that uniquely identifies the user (mail, sAMAccountName)
                 this.ResolveInputBulk(resolveInput.Value, string.Empty, true);
+                
                 if (this.consolidatedResults != null && this.consolidatedResults.Count > 0)
                 {
                     resolved.Add(this.consolidatedResults.ElementAt(0).PickerEntity);
@@ -230,29 +191,23 @@
 
                 if (this.alwaysResolveValue)
                 {
-                    Collection<PickerEntity> entities = this.CreatePickerEntityForEachClaimType(resolveInput.Value);
-                    if (entities != null)
-                    {
-                        resolved.Add(entities.Where(e => e.Claim.ClaimType == resolveInput.ClaimType).FirstOrDefault());
-                    }
+                    // TODO
                 }
             });
         }
 
         protected override void FillResolve(Uri context, string[] entityTypes, string resolveInput, List<PickerEntity> resolved)
         {
-            if (this.attributesToQuery == null)
+            if (this.identityAttribute == null)
             {
                 return;
             }
 
-            string input = resolveInput;
             SPSecurity.RunWithElevatedPrivileges(delegate
             {
                 this.Initialize();
 
-                // TODO: var attributeCollection = this.attributesToQuery.Where(a => entityTypes.Contains(a.ClaimEntityType) && !a.ResolveAsIdentityClaim);
-                this.ResolveInputBulk(input, string.Empty, false);
+                this.ResolveInputBulk(resolveInput, string.Empty, false);
 
                 if (this.consolidatedResults != null)
                 {
@@ -264,14 +219,7 @@
 
                 if (this.alwaysResolveValue)
                 {
-                    Collection<PickerEntity> entities = this.CreatePickerEntityForEachClaimType(input);
-                    if (entities != null)
-                    {
-                        foreach (var entity in entities)
-                        {
-                            resolved.Add(entity);
-                        }
-                    }
+                    // TODO
                 }
             });
         }
@@ -282,7 +230,7 @@
 
         protected override void FillSearch(Uri context, string[] entityTypes, string searchPattern, string hierarchyNodeID, int maxCount, SPProviderHierarchyTree searchTree)
         {
-            if (this.attributesToQuery == null)
+            if (this.identityAttribute == null)
             {
                 return;
             }
@@ -327,33 +275,7 @@
 
                 if (this.alwaysResolveValue)
                 {
-                    Collection<PickerEntity> entities = this.CreatePickerEntityForEachClaimType(searchPattern);
-                    if (entities != null)
-                    {
-                        foreach (var entity in entities)
-                        {
-                            // Add current PickerEntity to the corresponding attribute in the hierarchy
-                            var hirarchyDetails = from a in this.attributesToQuery
-                                                  where a.ClaimType == entity.Claim.ClaimType && !a.ResolveAsIdentityClaim
-                                                  select new 
-                                                  { 
-                                                      HierarchyNodeId = a.PeoplePickerAttributeHierarchyNodeId, 
-                                                      HierarchyNodeDisplayName = a.PeoplePickerAttributeDisplayName 
-                                                  };
-
-                            if (searchTree.HasChild(hirarchyDetails.FirstOrDefault().HierarchyNodeId))
-                            {
-                                matchNode = searchTree.Children.First(c => c.HierarchyNodeID == hirarchyDetails.FirstOrDefault().HierarchyNodeId);
-                            }
-                            else
-                            {
-                                matchNode = new SPProviderHierarchyNode(ProviderInternalName, hirarchyDetails.FirstOrDefault().HierarchyNodeDisplayName, hirarchyDetails.FirstOrDefault().HierarchyNodeId, true);
-                                searchTree.AddChild(matchNode);
-                            }
-
-                            matchNode.AddEntity(entity);
-                        }
-                    }
+                    // TODO
                 }
             });
         }
@@ -372,9 +294,9 @@
                     this.auth0Config.Domain);
 
                 this.alwaysResolveValue = this.auth0Config.AlwaysResolveUserInput;
-                this.identityValueDisplay = IdentityValueDisplay.IdentityValue;
-                this.attributesDefinitionList = this.auth0Config.AttributesList;
-                this.PopulateActualAttributesList();
+                this.pickerEntityGroupName = this.auth0Config.PickerEntityGroupName;
+                this.identityAttribute = this.auth0Config.AttributesToShow.Where(
+                    a => a.ClaimType == this.associatedSPTrustedLoginProvider.IdentityClaimTypeInformation.MappedClaimType).First();
             }
         }
 
@@ -382,7 +304,7 @@
         {
             this.consolidatedResults = new Collection<ConsolidatedResult>();
 
-            if (string.IsNullOrEmpty(input) || this.attributesToQuery.Count() == 0)
+            if (string.IsNullOrEmpty(input) || this.identityAttribute == null)
             {
                 return;
             }
@@ -406,195 +328,49 @@
                 var pickerAttributeName = string.IsNullOrEmpty(connectionName) ?
                     user.Identities.First().Connection : connectionName;
 
-                // TODO: remove this
-                var attributeToQuery = new ClaimAttribute
+                var claimAttribute = new ClaimAttribute
                 {
-                    Auth0AttributeName = this.attributesToQuery.First().Auth0AttributeName,
-                    ClaimEntityType = this.attributesToQuery.First().ClaimEntityType,
-                    ClaimType = this.attributesToQuery.First().ClaimType,
-                    ClaimValueType = this.attributesToQuery.First().ClaimValueType,
-                    PeopleEditorEntityDataKey = this.attributesToQuery.First().PeopleEditorEntityDataKey,
+                    Auth0AttributeName = this.identityAttribute.Auth0AttributeName,
+                    ClaimEntityType = this.identityAttribute.ClaimEntityType,
+                    ClaimType = this.identityAttribute.ClaimType,
+                    ClaimValueType = this.identityAttribute.ClaimValueType,
+                    PeopleEditorEntityDataKey = this.identityAttribute.PeopleEditorEntityDataKey,
                     PeoplePickerAttributeDisplayName = pickerAttributeName,
-                    PeoplePickerAttributeHierarchyNodeId = pickerAttributeName,
-                    ResolveAsIdentityClaim = this.attributesToQuery.First().ResolveAsIdentityClaim
+                    PeoplePickerAttributeHierarchyNodeId = pickerAttributeName
                 };
 
                 this.consolidatedResults.Add(new ConsolidatedResult
                 {
-                    Attribute = attributeToQuery,
+                    Attribute = claimAttribute,
                     Auth0User = user,
-                    PickerEntity = this.GetPickerEntity(attributeToQuery, user)
+                    PickerEntity = this.GetPickerEntity(claimAttribute, user)
                 });
             }
         }
 
         protected virtual PickerEntity GetPickerEntity(ClaimAttribute attribute, Auth0.User auth0User)
         {
-            PickerEntity pe = CreatePickerEntity();
-            SPClaim claim;
-
-            if (attribute.ResolveAsIdentityClaim)
-            {
-                claim = new SPClaim(
+            var claim = new SPClaim(
                     this.identityAttribute.ClaimType,
                     Helper.GetPropertyValue(auth0User, this.identityAttribute.Auth0AttributeName).ToString(),
                     this.identityAttribute.ClaimValueType,
                     SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, this.associatedSPTrustedLoginProvider.Name));
 
-                var displayText = string.Empty;
-                switch (this.identityValueDisplay)
-                {
-                    case IdentityValueDisplay.IdentityValue:
-                        displayText = Helper.GetPropertyValue(auth0User, this.identityAttribute.Auth0AttributeName).ToString();
-                        break;
-
-                    case IdentityValueDisplay.SpecificValue:
-                        this.auth0ValueToDisplayForIdentityAttribute = this.attributesToQuery.Where(x => x.Auth0AttributeName == this.auth0Config.Auth0ValueToDisplayForIdentityAttribute).FirstOrDefault();
-                        if (this.auth0ValueToDisplayForIdentityAttribute != null && !string.IsNullOrEmpty(Helper.GetPropertyValue(auth0User, this.auth0ValueToDisplayForIdentityAttribute.Auth0AttributeName).ToString()))
-                        {
-                            displayText = Helper.GetPropertyValue(auth0User, this.auth0ValueToDisplayForIdentityAttribute.Auth0AttributeName).ToString();
-                        }
-                        else
-                        {
-                            displayText = Helper.GetPropertyValue(auth0User, this.identityAttribute.Auth0AttributeName).ToString();
-                        }
-
-                        break;
-
-                    case IdentityValueDisplay.IncludeValueThatResolvedInput:
-                        displayText = string.Format(
-                            this.PickerEntityDisplayTextAdditionalAttribute,
-                            Helper.GetPropertyValue(auth0User, this.identityAttribute.Auth0AttributeName).ToString(),
-                            attribute.Auth0AttributeName,
-                            Helper.GetPropertyValue(auth0User, attribute.Auth0AttributeName).ToString());
-                        break;
-
-                    default:
-                        displayText = Helper.GetPropertyValue(auth0User, this.identityAttribute.Auth0AttributeName).ToString();
-                        break;
-                }
-
-                pe.DisplayText = displayText;
-                pe.EntityType = this.identityAttribute.ClaimEntityType;
-                pe.Description = string.Format(
-                    this.PickerEntityOnMouseOverAdditionalAttribute,
-                    ProviderInternalName,
-                    Helper.GetPropertyValue(auth0User, this.identityAttribute.Auth0AttributeName).ToString(),
-                    attribute.Auth0AttributeName,
-                    Helper.GetPropertyValue(auth0User, attribute.Auth0AttributeName).ToString());
-            }
-            else
-            {
-                claim = new SPClaim(
-                    attribute.ClaimType,
-                    Helper.GetPropertyValue(auth0User, attribute.Auth0AttributeName).ToString(),
-                    attribute.ClaimValueType,
-                    SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, this.associatedSPTrustedLoginProvider.Name));
-
-                // Display value only when the claim type is the identity claim, so that Welcome menu shows only value
-                // For other claim types: Display the claim type to easily identify on what attribute is defined the value
-                var displayText = string.Empty;
-                if (this.associatedSPTrustedLoginProvider.IdentityClaimTypeInformation.InputClaimType == claim.ClaimType)
-                {
-                    // Identity claim type may use an attribute where its value doesn't mean anything to users (for example a corporate ID)
-                    // In that case it is possible to use another Auth0 attrbute to display the permission
-                    // So that user permissions list is more readable
-                    if (this.identityValueDisplay == IdentityValueDisplay.SpecificValue && this.auth0ValueToDisplayForIdentityAttribute != null && !string.IsNullOrEmpty(Helper.GetPropertyValue(auth0User, this.auth0ValueToDisplayForIdentityAttribute.Auth0AttributeName).ToString()))
-                    {
-                        displayText = Helper.GetPropertyValue(auth0User, this.auth0ValueToDisplayForIdentityAttribute.Auth0AttributeName).ToString();
-                    }
-                    else
-                    {
-                        displayText = Helper.GetPropertyValue(auth0User, attribute.Auth0AttributeName).ToString();
-                    }
-                }
-                else
-                {
-                    displayText = string.Format(
-                        this.PickerEntityDisplayText,
-                        attribute.PeoplePickerAttributeDisplayName,
-                        Helper.GetPropertyValue(auth0User, attribute.Auth0AttributeName).ToString());
-                }
-
-                pe.DisplayText = displayText;
-                pe.EntityType = attribute.ClaimEntityType;
-                pe.Description = string.Format(
-                    this.PickerEntityOnMouseOver,
-                    ProviderInternalName,
-                    attribute.Auth0AttributeName,
-                    Helper.GetPropertyValue(auth0User, attribute.Auth0AttributeName).ToString());
-            }
+            PickerEntity pe = CreatePickerEntity();
+            pe.DisplayText = Helper.GetPropertyValue(auth0User, this.identityAttribute.Auth0AttributeName).ToString();
+            pe.EntityType = this.identityAttribute.ClaimEntityType;
+            pe.Description = string.Format(
+                this.PickerEntityOnMouseOverAdditionalAttribute,
+                ProviderInternalName,
+                Helper.GetPropertyValue(auth0User, this.identityAttribute.Auth0AttributeName).ToString(),
+                attribute.Auth0AttributeName,
+                Helper.GetPropertyValue(auth0User, attribute.Auth0AttributeName).ToString());
 
             pe.Claim = claim;
             pe.IsResolved = true;
-            pe.EntityGroupName = this.auth0Config.PickerEntityGroupName;
-
-            if (attribute.ClaimEntityType == SPClaimEntityTypes.User)
-            {
-                // Try to fill some properties in the hashtable of the PickerEntry based on the Auth0 object
-                // so that the picker entity is populated with as many attributes as possible
-                var entityAttribs = from a in this.attributesToQuery
-                                    where !string.IsNullOrEmpty(a.PeopleEditorEntityDataKey)
-                                    select new { Auth0AttributeName = a.Auth0AttributeName, PeopleEditorEntityDataKey = a.PeopleEditorEntityDataKey };
-
-                foreach (var entityAttrib in entityAttribs)
-                {
-                    pe.EntityData[entityAttrib.PeopleEditorEntityDataKey] =
-                        Helper.GetPropertyValue(auth0User, entityAttrib.Auth0AttributeName).ToString();
-                }
-            }
+            pe.EntityGroupName = this.pickerEntityGroupName;
 
             return pe;
-        }
-
-        /// <summary>
-        /// Create a PickerEntity of the user input for each of the claim type registered in the trust
-        /// </summary>
-        /// <param name="input"></param>
-        /// <returns></returns>
-        protected virtual Collection<PickerEntity> CreatePickerEntityForEachClaimType(string input)
-        {
-            var attributeCollection = this.attributesToQuery.Where(a => !a.ResolveAsIdentityClaim);
-            var entities = new Collection<PickerEntity>();
-
-            foreach (var attribute in attributeCollection)
-            {
-                PickerEntity pe = CreatePickerEntity();
-                var claim = new SPClaim(
-                    attribute.ClaimType,
-                    input,
-                    attribute.ClaimValueType,
-                    SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, this.associatedSPTrustedLoginProvider.Name));
-
-                // Display value only when the claim type is the identity claim, so that Welcome menu shows only value
-                // For other claim types: Display the claim type to easily identify on what attribute is defined the value
-                if (this.associatedSPTrustedLoginProvider.IdentityClaimTypeInformation.InputClaimType == claim.ClaimType)
-                {
-                    pe.DisplayText = input;
-                }
-                else
-                {
-                    pe.DisplayText = string.Format(
-                        this.PickerEntityDisplayText,
-                        attribute.PeoplePickerAttributeDisplayName,
-                        input);
-                }
-
-                pe.EntityType = attribute.ClaimEntityType;
-                pe.Description = string.Format(
-                    this.PickerEntityOnMouseOver,
-                    ProviderInternalName,
-                    attribute.Auth0AttributeName,
-                    input);
-
-                pe.Claim = claim;
-                pe.IsResolved = true;
-                pe.EntityGroupName = "Results";
-
-                entities.Add(pe);
-            }
-
-            return entities;
         }
 
         private static SPProviderHierarchyNode GetParentNode(string nodeName)
@@ -635,45 +411,6 @@
             }
 
             hierarchy.AddChild(socialNode);
-        }
-
-        private void PopulateActualAttributesList()
-        {
-            if (this.associatedSPTrustedLoginProvider == null)
-            {
-                return;
-            }
-
-            // Get attributes defined in trust based on their claim type (unique way to map them)
-            var attributesDefinedInTrust = new Collection<ClaimAttribute>();
-            foreach (var attr in this.attributesDefinitionList.Where(a => this.associatedSPTrustedLoginProvider.ClaimTypes.Contains(a.ClaimType)))
-            {
-                attributesDefinedInTrust.Add(attr);
-            }
-
-            // Make sure that the identity claim is in this collection
-            if (attributesDefinedInTrust == null || attributesDefinedInTrust.Count(
-                a => a.ClaimType == this.associatedSPTrustedLoginProvider.IdentityClaimTypeInformation.MappedClaimType) == 0)
-            {
-                // string.Format("[{0}] Impossible to continue because identity claim \"{1}\" is missing in the list of attributes to query. Please use method PopulateAttributesDefinition() to add it", ProviderInternalName, AssociatedSPTrustedLoginProvider.IdentityClaimTypeInformation.MappedClaimType)
-                return;
-            }
-
-            // Check if attributes that should be always used are in the list, and add them if not
-            var additionalAttributes = new Collection<ClaimAttribute>();
-            foreach (var attr in this.attributesDefinitionList.Where(
-                a => a.ResolveAsIdentityClaim == true && !attributesDefinedInTrust.Any(at => at.Auth0AttributeName == a.Auth0AttributeName)))
-            {
-                attr.ClaimType = this.associatedSPTrustedLoginProvider.IdentityClaimTypeInformation.MappedClaimType;
-                attr.ClaimEntityType = SPClaimEntityTypes.User;
-                additionalAttributes.Add(attr);
-            }
-
-            this.attributesToQuery = attributesDefinedInTrust.Union(additionalAttributes);
-
-            // Get identity attribute from SPTrustedLoginProvider configuration
-            this.identityAttribute = this.attributesToQuery.Where(
-                a => a.ClaimType == this.associatedSPTrustedLoginProvider.IdentityClaimTypeInformation.MappedClaimType).First();
         }
     }
 }

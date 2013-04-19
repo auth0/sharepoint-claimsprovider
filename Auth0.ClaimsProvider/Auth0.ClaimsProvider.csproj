@@ -77,7 +77,6 @@
     <Compile Include="Configuration\IConfigurationRepository.cs" />
     <Compile Include="ConsolidatedResult.cs" />
     <Compile Include="CustomClaimsProvider.cs" />
-    <Compile Include="Enums.cs" />
     <Compile Include="Features\Auth0\Auth0.EventReceiver.cs">
       <DependentUpon>Auth0.feature</DependentUpon>
     </Compile>

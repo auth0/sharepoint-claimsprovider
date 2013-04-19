@@ -26,11 +26,6 @@
         /// </summary>
         public string ClaimEntityType { get; set; }
 
-        /// <summary>
-        /// Set to true if the attribute should always be queried in Auth0
-        /// </summary>
-        public bool ResolveAsIdentityClaim { get; set; }
-
         public string PeoplePickerAttributeHierarchyNodeId { get; set; }
 
         public string PeoplePickerAttributeDisplayName { get; set; }

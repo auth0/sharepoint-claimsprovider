@@ -67,8 +67,6 @@
             set { this.pickerEntityGroupName = value; }
         }
 
-        public string Auth0ValueToDisplayForIdentityAttribute { get; set; }
-
-        public List<ClaimAttribute> AttributesList { get; set; }
+        public List<ClaimAttribute> AttributesToShow { get; set; }
     }
 }

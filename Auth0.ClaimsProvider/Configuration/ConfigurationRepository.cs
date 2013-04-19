@@ -19,9 +19,8 @@
                 configuration.PickerEntityGroupName = "Results";
             }
 
-            // TODO: remove this
-            configuration.Auth0ValueToDisplayForIdentityAttribute = null;
-            configuration.AttributesList = new List<ClaimAttribute>
+            // TODO: move to configuration
+            configuration.AttributesToShow = new List<ClaimAttribute>
                 {
                     new ClaimAttribute
                     {

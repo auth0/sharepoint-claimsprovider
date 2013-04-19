@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using Microsoft.SharePoint.Administration;
     using Microsoft.SharePoint.Administration.Claims;
+    using Microsoft.SharePoint.WebControls;
 
     public class ConfigurationRepository : IConfigurationRepository
     {
@@ -21,14 +22,22 @@
 
             // TODO: move to configuration
             configuration.AttributesToShow = new List<ClaimAttribute>
+            {
+                new ClaimAttribute
                 {
-                    new ClaimAttribute
-                    {
-                        Auth0AttributeName = "Email",
-                        ClaimType = Microsoft.IdentityModel.Claims.ClaimTypes.Email, 
-                        ClaimEntityType = SPClaimEntityTypes.User
-                    }
-                };
+                    Auth0AttributeName = "Email",
+                    ClaimType = Microsoft.IdentityModel.Claims.ClaimTypes.Email, 
+                    ClaimEntityType = SPClaimEntityTypes.User,
+                    PeopleEditorEntityDataKey = PeopleEditorEntityDataKeys.Email
+                },
+                new ClaimAttribute
+                {
+                    Auth0AttributeName = "Name",
+                    ClaimType = "http://schemas.auth0.com/name", 
+                    ClaimEntityType = SPClaimEntityTypes.User,
+                    PeopleEditorEntityDataKey = PeopleEditorEntityDataKeys.DisplayName
+                }
+            };
 
             return configuration;
         }

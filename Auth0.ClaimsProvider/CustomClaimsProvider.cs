@@ -21,9 +21,11 @@
         private Auth0.Client auth0Client;
         private Auth0Config auth0Config;
         private ClaimAttribute identityAttribute; // Attribute mapped to the identity claim in the SPTrustedLoginProvider
+        private ClaimAttribute displayAttribute;
         private ICollection<ConsolidatedResult> consolidatedResults;
         private bool alwaysResolveValue;
         private string pickerEntityGroupName;
+        private IEnumerable<ClaimAttribute> configuredAttributes;
 
         public CustomClaimsProvider(string displayName)
             : this(displayName, new ConfigurationRepository())
@@ -86,20 +88,10 @@
 
         protected virtual string PickerEntityDisplayText
         {
-            get { return "({0}) {1}"; }
-        }
-
-        protected virtual string PickerEntityDisplayTextAdditionalAttribute
-        {
-            get { return "{0} ({1} = {2})"; }
+            get { return "{0} ({1})"; }
         }
 
         protected virtual string PickerEntityOnMouseOver
-        {
-            get { return "[{0}] {1} = {2}"; }
-        }
-
-        protected virtual string PickerEntityOnMouseOverAdditionalAttribute
         {
             get { return "[{0}] {1} ({2} = {3})"; }
         }
@@ -295,8 +287,11 @@
 
                 this.alwaysResolveValue = this.auth0Config.AlwaysResolveUserInput;
                 this.pickerEntityGroupName = this.auth0Config.PickerEntityGroupName;
-                this.identityAttribute = this.auth0Config.AttributesToShow.Where(
-                    a => a.ClaimType == this.associatedSPTrustedLoginProvider.IdentityClaimTypeInformation.MappedClaimType).First();
+                this.configuredAttributes = this.auth0Config.AttributesToShow;
+                this.displayAttribute = this.configuredAttributes.FirstOrDefault(
+                    a => a.PeopleEditorEntityDataKey == PeopleEditorEntityDataKeys.DisplayName);
+                this.identityAttribute = this.configuredAttributes.FirstOrDefault(
+                    a => a.ClaimType == this.associatedSPTrustedLoginProvider.IdentityClaimTypeInformation.MappedClaimType);
             }
         }
 
@@ -343,12 +338,12 @@
                 {
                     Attribute = claimAttribute,
                     Auth0User = user,
-                    PickerEntity = this.GetPickerEntity(claimAttribute, user)
+                    PickerEntity = this.GetPickerEntity(user)
                 });
             }
         }
 
-        protected virtual PickerEntity GetPickerEntity(ClaimAttribute attribute, Auth0.User auth0User)
+        protected virtual PickerEntity GetPickerEntity(Auth0.User auth0User)
         {
             var claim = new SPClaim(
                     this.identityAttribute.ClaimType,
@@ -357,18 +352,44 @@
                     SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, this.associatedSPTrustedLoginProvider.Name));
 
             PickerEntity pe = CreatePickerEntity();
-            pe.DisplayText = Helper.GetPropertyValue(auth0User, this.identityAttribute.Auth0AttributeName).ToString();
             pe.EntityType = this.identityAttribute.ClaimEntityType;
+
+            var identityValue = Helper.GetPropertyValue(auth0User, this.identityAttribute.Auth0AttributeName).ToString();
+            var displayValue = this.displayAttribute != null ?
+                Helper.GetPropertyValue(auth0User, this.displayAttribute.Auth0AttributeName).ToString() :
+                string.Empty;
+
+            pe.DisplayText = string.IsNullOrEmpty(displayValue) ?
+                identityValue :
+                string.Format(this.PickerEntityDisplayText, displayValue, identityValue);
+            
             pe.Description = string.Format(
-                this.PickerEntityOnMouseOverAdditionalAttribute,
+                this.PickerEntityOnMouseOver,
                 ProviderInternalName,
-                Helper.GetPropertyValue(auth0User, this.identityAttribute.Auth0AttributeName).ToString(),
-                attribute.Auth0AttributeName,
-                Helper.GetPropertyValue(auth0User, attribute.Auth0AttributeName).ToString());
+                identityValue,
+                string.IsNullOrEmpty(displayValue) ? this.identityAttribute.Auth0AttributeName : this.displayAttribute.Auth0AttributeName,
+                string.IsNullOrEmpty(displayValue) ? identityValue : displayValue);
 
             pe.Claim = claim;
             pe.IsResolved = true;
             pe.EntityGroupName = this.pickerEntityGroupName;
+
+            if (this.identityAttribute.ClaimEntityType == SPClaimEntityTypes.User)
+            {
+                // Try to fill some properties in the hashtable of the PickerEntry based on the Auth0.User resolved
+                // so that the picker entity is populated with as many attributes as possible
+                var entityAttribs = from a in this.configuredAttributes
+                                    where !string.IsNullOrEmpty(a.PeopleEditorEntityDataKey)
+                                    select new { Auth0AttributeName = a.Auth0AttributeName, PeopleEditorEntityDataKey = a.PeopleEditorEntityDataKey };
+
+                foreach (var entityAttrib in entityAttribs)
+                {
+                    pe.EntityData[entityAttrib.PeopleEditorEntityDataKey] =
+                        Helper.GetPropertyValue(auth0User, entityAttrib.Auth0AttributeName) != null ?
+                            Helper.GetPropertyValue(auth0User, entityAttrib.Auth0AttributeName).ToString() : 
+                            string.Empty;
+                }
+            }
 
             return pe;
         }

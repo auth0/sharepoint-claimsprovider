@@ -365,7 +365,7 @@
             
             pe.Description = string.Format(
                 this.PickerEntityOnMouseOver,
-                ProviderInternalName,
+                ProviderInternalName + " | " + auth0User.Identities.First().Connection,
                 identityValue,
                 string.IsNullOrEmpty(displayValue) ? this.identityAttribute.Auth0AttributeName : this.displayAttribute.Auth0AttributeName,
                 string.IsNullOrEmpty(displayValue) ? identityValue : displayValue);

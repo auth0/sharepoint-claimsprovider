@@ -10,9 +10,9 @@ Auth0 Claims Provider for SharePoint 2010
   1. Open solution and enable "NuGet Package Restore"
   2. Compile solution
   2. Right click on project -> Package (that will generate a .wsp file)
-  3. Install and deploy the solution from PowerShell:
+  3. Open a SharePoint Powershell session to install and deploy the solution:
 
-  ~~~
+  ~~~ps1
   Add-SPSolution -LiteralPath "<path to .wsp file>"
   Install-SPSolution -Identity auth0.claimsprovider.wsp -GACDeployment
   ~~~
@@ -29,4 +29,4 @@ For more information about <a href="http://auth0.com" target="_blank">auth0</a> 
 
 ## License
 
-This client library is MIT licensed.
+This SharePoint feature is MIT licensed.

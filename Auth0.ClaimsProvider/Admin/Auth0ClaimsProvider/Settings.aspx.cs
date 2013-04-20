@@ -17,7 +17,7 @@
         protected void Page_Load(object sender, EventArgs e)
         {
             // Get trust currently associated with Auth0, if any
-            this.currentTrustedLoginProvider = Helper.GetSPTrustAssociatedWithCP(CustomClaimsProvider.ProviderInternalName);
+            this.currentTrustedLoginProvider = Utils.GetSPTrustAssociatedWithCP(CustomClaimsProvider.ProviderInternalName);
             if (this.currentTrustedLoginProvider == null)
             {
                 // Claim provider is currently not associated with any trust.

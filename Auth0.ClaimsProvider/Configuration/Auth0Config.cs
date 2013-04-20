@@ -67,6 +67,6 @@
             set { this.pickerEntityGroupName = value; }
         }
 
-        public List<ClaimAttribute> AttributesToShow { get; set; }
+        public List<ClaimAttribute> ConfiguredAttributes { get; set; }
     }
 }

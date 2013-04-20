@@ -21,8 +21,14 @@
             }
 
             // TODO: move to configuration
-            configuration.AttributesToShow = new List<ClaimAttribute>
+            configuration.ConfiguredAttributes = new List<ClaimAttribute>
             {
+                new ClaimAttribute
+                {
+                    Auth0AttributeName = "UniqueEmail",
+                    ClaimType = "http://schemas.auth0.com/connection_email", 
+                    ClaimEntityType = SPClaimEntityTypes.User
+                },
                 new ClaimAttribute
                 {
                     Auth0AttributeName = "Email",
@@ -32,10 +38,10 @@
                 },
                 new ClaimAttribute
                 {
-                    Auth0AttributeName = "Name",
-                    ClaimType = "http://schemas.auth0.com/name", 
+                    Auth0AttributeName = "Picture",
+                    ClaimType = "http://schemas.auth0.com/picture",
                     ClaimEntityType = SPClaimEntityTypes.User,
-                    PeopleEditorEntityDataKey = PeopleEditorEntityDataKeys.DisplayName
+                    PeopleEditorEntityDataKey = "Picture"
                 }
             };
 

@@ -7,6 +7,7 @@
     using System.Net;
     using Auth0.ClaimsProvider.Configuration;
     using Microsoft.SharePoint;
+    using Microsoft.SharePoint.Administration;
     using Microsoft.SharePoint.Administration.Claims;
     using Microsoft.SharePoint.WebControls;
 
@@ -274,7 +275,7 @@
 
         protected void Initialize()
         {
-            this.associatedSPTrustedLoginProvider = Helper.GetSPTrustAssociatedWithCP(ProviderInternalName);
+            this.associatedSPTrustedLoginProvider = Utils.GetSPTrustAssociatedWithCP(ProviderInternalName);
             if (this.associatedSPTrustedLoginProvider != null)
             {
                 this.auth0Config = this.configurationRepository.GetConfiguration();
@@ -287,11 +288,19 @@
 
                 this.alwaysResolveValue = this.auth0Config.AlwaysResolveUserInput;
                 this.pickerEntityGroupName = this.auth0Config.PickerEntityGroupName;
-                this.configuredAttributes = this.auth0Config.AttributesToShow;
+                this.configuredAttributes = this.auth0Config.ConfiguredAttributes;
                 this.displayAttribute = this.configuredAttributes.FirstOrDefault(
                     a => a.PeopleEditorEntityDataKey == PeopleEditorEntityDataKeys.DisplayName);
                 this.identityAttribute = this.configuredAttributes.FirstOrDefault(
                     a => a.ClaimType == this.associatedSPTrustedLoginProvider.IdentityClaimTypeInformation.MappedClaimType);
+
+                if (this.identityAttribute == null)
+                {
+                    Utils.LogToULS(
+                        "Identifier claim type must be part of the configured attributes list",
+                        TraceSeverity.Unexpected,
+                        EventSeverity.Error);
+                }
             }
         }
 
@@ -304,42 +313,52 @@
                 return;
             }
 
-            IEnumerable<Auth0.User> users;
+            IEnumerable<Auth0.User> users = null;
 
-            if (!string.IsNullOrEmpty(connectionName))
+            try
             {
-                users = this.auth0Client.GetUsersByConnection(connectionName, input);
-            }
-            else 
-            {
-                var socialUsers = this.auth0Client.GetSocialUsers(input);
-                var enterpriseUsers = this.auth0Client.GetEnterpriseUsers(input);
-
-                users = socialUsers.Union(enterpriseUsers);
-            }
-
-            foreach (var user in users)
-            {
-                var pickerAttributeName = string.IsNullOrEmpty(connectionName) ?
-                    user.Identities.First().Connection : connectionName;
-
-                var claimAttribute = new ClaimAttribute
+                if (!string.IsNullOrEmpty(connectionName))
                 {
-                    Auth0AttributeName = this.identityAttribute.Auth0AttributeName,
-                    ClaimEntityType = this.identityAttribute.ClaimEntityType,
-                    ClaimType = this.identityAttribute.ClaimType,
-                    ClaimValueType = this.identityAttribute.ClaimValueType,
-                    PeopleEditorEntityDataKey = this.identityAttribute.PeopleEditorEntityDataKey,
-                    PeoplePickerAttributeDisplayName = pickerAttributeName,
-                    PeoplePickerAttributeHierarchyNodeId = pickerAttributeName
-                };
-
-                this.consolidatedResults.Add(new ConsolidatedResult
+                    users = this.auth0Client.GetUsersByConnection(connectionName, input);
+                }
+                else
                 {
-                    Attribute = claimAttribute,
-                    Auth0User = user,
-                    PickerEntity = this.GetPickerEntity(user)
-                });
+                    var socialUsers = this.auth0Client.GetSocialUsers(input);
+                    var enterpriseUsers = this.auth0Client.GetEnterpriseUsers(input);
+
+                    users = socialUsers.Union(enterpriseUsers);
+                }
+            }
+            catch (Exception ex)
+            {
+                Utils.LogToULS(ex.ToString(), TraceSeverity.Unexpected, EventSeverity.Error);
+            }
+
+            if (users != null)
+            {
+                foreach (var user in users)
+                {
+                    var pickerAttributeName = string.IsNullOrEmpty(connectionName) ?
+                        user.Identities.First().Connection : connectionName;
+
+                    var claimAttribute = new ClaimAttribute
+                    {
+                        Auth0AttributeName = this.identityAttribute.Auth0AttributeName,
+                        ClaimEntityType = this.identityAttribute.ClaimEntityType,
+                        ClaimType = this.identityAttribute.ClaimType,
+                        ClaimValueType = this.identityAttribute.ClaimValueType,
+                        PeopleEditorEntityDataKey = this.identityAttribute.PeopleEditorEntityDataKey,
+                        PeoplePickerAttributeDisplayName = pickerAttributeName,
+                        PeoplePickerAttributeHierarchyNodeId = pickerAttributeName
+                    };
+
+                    this.consolidatedResults.Add(new ConsolidatedResult
+                    {
+                        Attribute = claimAttribute,
+                        Auth0User = user,
+                        PickerEntity = this.GetPickerEntity(user)
+                    });
+                }
             }
         }
 
@@ -347,28 +366,20 @@
         {
             var claim = new SPClaim(
                     this.identityAttribute.ClaimType,
-                    Helper.GetPropertyValue(auth0User, this.identityAttribute.Auth0AttributeName).ToString(),
+                    Utils.GetPropertyValue(auth0User, this.identityAttribute.Auth0AttributeName).ToString(),
                     this.identityAttribute.ClaimValueType,
                     SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, this.associatedSPTrustedLoginProvider.Name));
 
             PickerEntity pe = CreatePickerEntity();
             pe.EntityType = this.identityAttribute.ClaimEntityType;
 
-            var identityValue = Helper.GetPropertyValue(auth0User, this.identityAttribute.Auth0AttributeName).ToString();
-            var displayValue = this.displayAttribute != null ?
-                Helper.GetPropertyValue(auth0User, this.displayAttribute.Auth0AttributeName).ToString() :
-                string.Empty;
-
-            pe.DisplayText = string.IsNullOrEmpty(displayValue) ?
-                identityValue :
-                string.Format(this.PickerEntityDisplayText, displayValue, identityValue);
-            
+            pe.DisplayText = string.Format(this.PickerEntityDisplayText, auth0User.Name, auth0User.Email);
             pe.Description = string.Format(
                 this.PickerEntityOnMouseOver,
                 ProviderInternalName + " | " + auth0User.Identities.First().Connection,
-                identityValue,
-                string.IsNullOrEmpty(displayValue) ? this.identityAttribute.Auth0AttributeName : this.displayAttribute.Auth0AttributeName,
-                string.IsNullOrEmpty(displayValue) ? identityValue : displayValue);
+                auth0User.Email,
+                "Name",
+                auth0User.Name);
 
             pe.Claim = claim;
             pe.IsResolved = true;
@@ -385,8 +396,8 @@
                 foreach (var entityAttrib in entityAttribs)
                 {
                     pe.EntityData[entityAttrib.PeopleEditorEntityDataKey] =
-                        Helper.GetPropertyValue(auth0User, entityAttrib.Auth0AttributeName) != null ?
-                            Helper.GetPropertyValue(auth0User, entityAttrib.Auth0AttributeName).ToString() : 
+                        Utils.GetPropertyValue(auth0User, entityAttrib.Auth0AttributeName) != null ?
+                            Utils.GetPropertyValue(auth0User, entityAttrib.Auth0AttributeName).ToString() : 
                             string.Empty;
                 }
             }
@@ -396,42 +407,49 @@
 
         private static SPProviderHierarchyNode GetParentNode(string nodeName)
         {
-            return new Microsoft.SharePoint.WebControls.SPProviderHierarchyNode(
+            return new SPProviderHierarchyNode(
                 ProviderInternalName,
                 nodeName,
                 nodeName.ToLowerInvariant(),
                 false);
         }
 
+        private static void CreateConnectionNodes(SPProviderHierarchyTree hierarchy, string connectionType, IEnumerable<Connection> connections)
+        {
+            var parentNode = GetParentNode(connectionType);
+            if (connections != null)
+            {
+                foreach (var connection in connections.Where(c => c.Enabled))
+                {
+                    parentNode.AddChild(
+                        new SPProviderHierarchyNode(
+                            ProviderInternalName,
+                            connection.Name,
+                            connection.Name,
+                            true));
+                }
+            }
+
+            hierarchy.AddChild(parentNode);
+        }
+
         private void CreateConnectionsNodes(SPProviderHierarchyTree hierarchy)
         {
-            // Enterprise nodes
-            var enterpriseNode = GetParentNode(EnterpriseHierarchyNode);
-            foreach (var connection in this.auth0Client.GetEnterpriseConnections().Where(c => c.Enabled))
+            IEnumerable<Connection> enterpriseConnections = null;
+            IEnumerable<Connection> socialConnections = null;
+
+            try
             {
-                enterpriseNode.AddChild(
-                    new Microsoft.SharePoint.WebControls.SPProviderHierarchyNode(
-                        ProviderInternalName,
-                        connection.Name,
-                        connection.Name,
-                        true));
+                enterpriseConnections = this.auth0Client.GetEnterpriseConnections();
+                socialConnections = this.auth0Client.GetSocialConnections();
+            }
+            catch (Exception ex)
+            {
+                Utils.LogToULS(ex.ToString(), TraceSeverity.Unexpected, EventSeverity.Error);
             }
 
-            hierarchy.AddChild(enterpriseNode);
-
-            // Social nodes
-            var socialNode = GetParentNode(SocialHierarchyNode);
-            foreach (var connection in this.auth0Client.GetSocialConnections().Where(c => c.Enabled))
-            {
-                socialNode.AddChild(
-                    new Microsoft.SharePoint.WebControls.SPProviderHierarchyNode(
-                        ProviderInternalName,
-                        connection.Name,
-                        connection.Name,
-                        true));
-            }
-
-            hierarchy.AddChild(socialNode);
+            CreateConnectionNodes(hierarchy, EnterpriseHierarchyNode, enterpriseConnections);
+            CreateConnectionNodes(hierarchy, SocialHierarchyNode, socialConnections);
         }
     }
 }

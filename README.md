@@ -4,6 +4,7 @@ Auth0 Claims Provider for SharePoint 2010
   - SharePoint solution development tools for Visual Studio 2010
   - Windows Identity Foundation | <a href="http://www.microsoft.com/en-us/download/details.aspx?id=17331" target="_blank">download</a>
   - NuGet Package Manager | <a href="http://visualstudiogallery.msdn.microsoft.com/27077b70-9dad-4c64-adcf-c7cf6bc9970c" target="_blank">download</a>
+  - ILMerge v2 | <a href="http://www.microsoft.com/en-us/download/details.aspx?id=17630" target="_blank">download</a>
 
 ## Installation
 

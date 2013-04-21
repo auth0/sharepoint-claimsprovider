@@ -1,15 +1,14 @@
 ﻿namespace Auth0.ClaimsProvider.Configuration
 {
     using System.Collections.Generic;
+    using System.Runtime.InteropServices;
     using Microsoft.SharePoint.Administration;
 
+    [GuidAttribute("E3F4059C-DEC6-4887-80E6-2396AA2FE411")]
     public class Auth0Config : SPPersistedObject
     {
-        public const string Auth0PersistedObjectName = "Auth0ClaimsProviderConfig";
-        public const string Auth0PersistedObjectNameId = "E3F4059C-DEC6-4887-80E6-2396AA2FE411";
-
         [Persisted]
-        private string cliendId;
+        private string clientId;
 
         [Persisted]
         private string clientSecret;
@@ -27,16 +26,21 @@
         {
         }
 
-        public Auth0Config(SPPersistedObject parent)
-            : base(Auth0PersistedObjectName, parent)
+        public Auth0Config(string objectName, SPPersistedObject parent)
+            : base(objectName, parent)
         {
+            this.ClientId = string.Empty;
+            this.ClientSecret = string.Empty;
+            this.Domain = string.Empty;
+            this.PickerEntityGroupName = string.Empty;
+            this.ConfiguredAttributes = new List<ClaimAttribute>();
         }
 
         public string ClientId
         {
-            get { return this.cliendId; }
+            get { return this.clientId; }
 
-            set { this.cliendId = value; }
+            set { this.clientId = value; }
         }
 
         public string ClientSecret

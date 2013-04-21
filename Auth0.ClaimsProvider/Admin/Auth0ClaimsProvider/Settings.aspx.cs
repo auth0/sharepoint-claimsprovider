@@ -41,17 +41,16 @@
                 return;
             }
 
-            var auth0Config = this.configurationRepository.GetConfiguration();
-            auth0Config.Domain = this.DomainTextBox.Text;
-            auth0Config.ClientId = this.ClientIdTextBox.Text;
-            auth0Config.ClientSecret = this.ClientSecretTextBox.Text;
-            auth0Config.AlwaysResolveUserInput = this.AlwaysResolveUserInputCheckbox.Checked;
-            auth0Config.PickerEntityGroupName = this.PickerEntityGroupNameTextBox.Text;
-
             // Update object in database
             SPSecurity.RunWithElevatedPrivileges(delegate
             {
                 this.Web.AllowUnsafeUpdates = true;
+                var auth0Config = this.configurationRepository.GetConfiguration();
+                auth0Config.Domain = this.DomainTextBox.Text;
+                auth0Config.ClientId = this.ClientIdTextBox.Text;
+                auth0Config.ClientSecret = this.ClientSecretTextBox.Text;
+                auth0Config.AlwaysResolveUserInput = this.AlwaysResolveUserInputCheckbox.Checked;
+                auth0Config.PickerEntityGroupName = this.PickerEntityGroupNameTextBox.Text;
                 this.configurationRepository.SaveConfiguration(auth0Config);
                 this.Web.AllowUnsafeUpdates = false;
 
@@ -80,7 +79,9 @@
             SPSecurity.RunWithElevatedPrivileges(delegate
             {
                 // Get SPPersisted Object
+                this.Web.AllowUnsafeUpdates = true;
                 auth0Config = this.configurationRepository.GetConfiguration();
+                this.Web.AllowUnsafeUpdates = false;
             });
 
             if (auth0Config != null)

@@ -8,14 +8,14 @@
 
     public class ConfigurationRepository : IConfigurationRepository
     {
+        public const string Auth0PersistedObjectName = "Auth0ClaimsProviderConfig";
+
         public Auth0Config GetConfiguration()
         {
-            SPPersistedObject parent = SPFarm.Local;
-
-            var configuration = parent.GetChild<Auth0Config>(Auth0Config.Auth0PersistedObjectName) ??
+            var configuration = SPFarm.Local.GetChild<Auth0Config>(Auth0PersistedObjectName) ??
                                 CreatePersistedObject();
 
-            if (string.IsNullOrEmpty(configuration.PickerEntityGroupName.Trim()))
+            if (string.IsNullOrEmpty(configuration.PickerEntityGroupName))
             {
                 configuration.PickerEntityGroupName = "Results";
             }
@@ -58,11 +58,9 @@
 
         private static Auth0Config CreatePersistedObject()
         {
-            var persistedObject = new Auth0Config(SPFarm.Local);
-            persistedObject.Id = new Guid(Auth0Config.Auth0PersistedObjectNameId);
+            var persistedObject = new Auth0Config(Auth0PersistedObjectName, SPFarm.Local);
             persistedObject.Update();
 
-            // string.Format("Created PersistedObject {0} with Id {1}", persistedObject.Name, persistedObject.Id);
             return persistedObject;
         }
     }

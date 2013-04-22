@@ -33,7 +33,6 @@
             this.ClientSecret = string.Empty;
             this.Domain = string.Empty;
             this.PickerEntityGroupName = string.Empty;
-            this.ConfiguredAttributes = new List<ClaimAttribute>();
         }
 
         public string ClientId
@@ -70,7 +69,5 @@
 
             set { this.pickerEntityGroupName = value; }
         }
-
-        public List<ClaimAttribute> ConfiguredAttributes { get; set; }
     }
 }

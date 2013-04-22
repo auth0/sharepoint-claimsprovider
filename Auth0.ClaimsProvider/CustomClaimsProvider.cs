@@ -15,6 +15,7 @@
     {
         private const string SocialHierarchyNode = "Social";
         private const string EnterpriseHierarchyNode = "Enterprise";
+        private const string IdentifierClaimsType = "http://schemas.auth0.com/connection_email";
         private const string ClientIdClaimsType = "http://schemas.auth0.com/clientID";
 
         private readonly IConfigurationRepository configurationRepository;
@@ -22,12 +23,9 @@
         private SPTrustedLoginProvider associatedSPTrustedLoginProvider; // Name of the SPTrustedLoginProvider associated with the claim provider
         private Auth0.Client auth0Client;
         private Auth0Config auth0Config;
-        private ClaimAttribute identityAttribute; // Attribute mapped to the identity claim in the SPTrustedLoginProvider
-        private ClaimAttribute displayAttribute;
         private ICollection<ConsolidatedResult> consolidatedResults;
         private bool alwaysResolveValue;
         private string pickerEntityGroupName;
-        private IEnumerable<ClaimAttribute> configuredAttributes;
 
         public CustomClaimsProvider(string displayName)
             : this(displayName, new ConfigurationRepository())
@@ -105,12 +103,7 @@
                 throw new ArgumentNullException("claimTypes");
             }
 
-            if (this.identityAttribute == null)
-            {
-                return;
-            }
-
-            claimTypes.Add(this.identityAttribute.ClaimType);
+            claimTypes.Add(IdentifierClaimsType);
         }
 
         protected override void FillClaimValueTypes(List<string> claimValueTypes)
@@ -120,12 +113,7 @@
                 throw new ArgumentNullException("claimValueTypes");
             }
 
-            if (this.identityAttribute == null)
-            {
-                return;
-            }
-
-            claimValueTypes.Add(this.identityAttribute.ClaimValueType);
+            claimValueTypes.Add(Microsoft.IdentityModel.Claims.ClaimValueTypes.String);
         }
 
         protected override void FillClaimsForEntity(Uri context, SPClaim entity, List<SPClaim> claims)
@@ -135,21 +123,11 @@
 
         protected override void FillEntityTypes(List<string> entityTypes)
         {
-            if (this.identityAttribute == null)
-            {
-                return;
-            }
-
-            entityTypes.Add(this.identityAttribute.ClaimEntityType);
+            entityTypes.Add(SPClaimEntityTypes.User);
         }
 
         protected override void FillHierarchy(Uri context, string[] entityTypes, string hierarchyNodeID, int numberOfLevels, SPProviderHierarchyTree hierarchy)
         {
-            if (this.identityAttribute == null)
-            {
-                return;
-            }
-
             if (hierarchyNodeID == null)
             {
                 this.CreateConnectionsNodes(hierarchy);
@@ -166,14 +144,14 @@
                 return;
             }
 
-            if (this.identityAttribute == null)
-            {
-                return;
-            }
-
             SPSecurity.RunWithElevatedPrivileges(delegate
             {
-                this.ResolveInputBulk(resolveInput.Value, string.Empty, true);
+                var input = resolveInput.Value.Contains('|') ?
+                    resolveInput.Value.Split('|')[1] : resolveInput.Value;
+                var connectionName = resolveInput.Value.Contains('|') ?
+                    resolveInput.Value.Split('|')[0] : string.Empty;
+
+                this.ResolveInputBulk(input, connectionName, true);
                 
                 if (this.consolidatedResults != null && this.consolidatedResults.Count > 0)
                 {
@@ -190,11 +168,6 @@
 
         protected override void FillResolve(Uri context, string[] entityTypes, string resolveInput, List<PickerEntity> resolved)
         {
-            if (this.identityAttribute == null)
-            {
-                return;
-            }
-
             SPSecurity.RunWithElevatedPrivileges(delegate
             {
                 this.ResolveInputBulk(resolveInput, string.Empty, false);
@@ -220,11 +193,6 @@
 
         protected override void FillSearch(Uri context, string[] entityTypes, string searchPattern, string hierarchyNodeID, int maxCount, SPProviderHierarchyTree searchTree)
         {
-            if (this.identityAttribute == null)
-            {
-                return;
-            }
-
             SPProviderHierarchyNode matchNode = null;
             SPSecurity.RunWithElevatedPrivileges(delegate
             {
@@ -293,19 +261,6 @@
 
                 this.alwaysResolveValue = this.auth0Config.AlwaysResolveUserInput;
                 this.pickerEntityGroupName = this.auth0Config.PickerEntityGroupName;
-                this.configuredAttributes = this.auth0Config.ConfiguredAttributes;
-                this.displayAttribute = this.configuredAttributes.FirstOrDefault(
-                    a => a.PeopleEditorEntityDataKey == PeopleEditorEntityDataKeys.DisplayName);
-                this.identityAttribute = this.configuredAttributes.FirstOrDefault(
-                    a => a.ClaimType == this.associatedSPTrustedLoginProvider.IdentityClaimTypeInformation.MappedClaimType);
-
-                if (this.identityAttribute == null)
-                {
-                    Utils.LogToULS(
-                        "Identifier claim type must be part of the configured attributes list",
-                        TraceSeverity.Unexpected,
-                        EventSeverity.Error);
-                }
             }
         }
 
@@ -313,7 +268,7 @@
         {
             this.consolidatedResults = new Collection<ConsolidatedResult>();
 
-            if (string.IsNullOrEmpty(input) || this.identityAttribute == null)
+            if (string.IsNullOrEmpty(input))
             {
                 return;
             }
@@ -348,11 +303,7 @@
 
                     var claimAttribute = new ClaimAttribute
                     {
-                        Auth0AttributeName = this.identityAttribute.Auth0AttributeName,
-                        ClaimEntityType = this.identityAttribute.ClaimEntityType,
-                        ClaimType = this.identityAttribute.ClaimType,
-                        ClaimValueType = this.identityAttribute.ClaimValueType,
-                        PeopleEditorEntityDataKey = this.identityAttribute.PeopleEditorEntityDataKey,
+                        ClaimEntityType = SPClaimEntityTypes.User,
                         PeoplePickerAttributeDisplayName = pickerAttributeName,
                         PeoplePickerAttributeHierarchyNodeId = pickerAttributeName
                     };
@@ -370,13 +321,13 @@
         protected virtual PickerEntity GetPickerEntity(Auth0.User auth0User)
         {
             var claim = new SPClaim(
-                    this.identityAttribute.ClaimType,
-                    Utils.GetPropertyValue(auth0User, this.identityAttribute.Auth0AttributeName).ToString(),
-                    this.identityAttribute.ClaimValueType,
+                    IdentifierClaimsType,
+                    auth0User.UniqueEmail(),
+                    Microsoft.IdentityModel.Claims.ClaimValueTypes.String,
                     SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, this.associatedSPTrustedLoginProvider.Name));
 
             PickerEntity pe = CreatePickerEntity();
-            pe.EntityType = this.identityAttribute.ClaimEntityType;
+            pe.EntityType = SPClaimEntityTypes.User;
 
             pe.DisplayText = string.Format(this.PickerEntityDisplayText, auth0User.Name, auth0User.Email);
             pe.Description = string.Format(
@@ -390,22 +341,9 @@
             pe.IsResolved = true;
             pe.EntityGroupName = this.pickerEntityGroupName;
 
-            if (this.identityAttribute.ClaimEntityType == SPClaimEntityTypes.User)
-            {
-                // Try to fill some properties in the hashtable of the PickerEntry based on the Auth0.User resolved
-                // so that the picker entity is populated with as many attributes as possible
-                var entityAttribs = from a in this.configuredAttributes
-                                    where !string.IsNullOrEmpty(a.PeopleEditorEntityDataKey)
-                                    select new { Auth0AttributeName = a.Auth0AttributeName, PeopleEditorEntityDataKey = a.PeopleEditorEntityDataKey };
-
-                foreach (var entityAttrib in entityAttribs)
-                {
-                    pe.EntityData[entityAttrib.PeopleEditorEntityDataKey] =
-                        Utils.GetPropertyValue(auth0User, entityAttrib.Auth0AttributeName) != null ?
-                            Utils.GetPropertyValue(auth0User, entityAttrib.Auth0AttributeName).ToString() : 
-                            string.Empty;
-                }
-            }
+            pe.EntityData[PeopleEditorEntityDataKeys.DisplayName] = auth0User.Name;
+            pe.EntityData[PeopleEditorEntityDataKeys.Email] = auth0User.Email;
+            pe.EntityData["Picture"] = auth0User.Picture;
 
             return pe;
         }

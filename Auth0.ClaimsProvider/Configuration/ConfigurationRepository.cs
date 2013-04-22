@@ -20,31 +20,6 @@
                 configuration.PickerEntityGroupName = "Results";
             }
 
-            // TODO: move to configuration
-            configuration.ConfiguredAttributes = new List<ClaimAttribute>
-            {
-                new ClaimAttribute
-                {
-                    Auth0AttributeName = "UniqueEmail",
-                    ClaimType = "http://schemas.auth0.com/connection_email", 
-                    ClaimEntityType = SPClaimEntityTypes.User
-                },
-                new ClaimAttribute
-                {
-                    Auth0AttributeName = "Email",
-                    ClaimType = Microsoft.IdentityModel.Claims.ClaimTypes.Email, 
-                    ClaimEntityType = SPClaimEntityTypes.User,
-                    PeopleEditorEntityDataKey = PeopleEditorEntityDataKeys.Email
-                },
-                new ClaimAttribute
-                {
-                    Auth0AttributeName = "Picture",
-                    ClaimType = "http://schemas.auth0.com/picture",
-                    ClaimEntityType = SPClaimEntityTypes.User,
-                    PeopleEditorEntityDataKey = "Picture"
-                }
-            };
-
             return configuration;
         }
 

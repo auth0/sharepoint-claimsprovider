@@ -60,18 +60,5 @@
                 claimsIdentity.Claims.First(c => c.ClaimType == claimType).Value :
                 string.Empty;
         }
-
-        public static object GetPropertyValue(object src, string propertyName)
-        {
-            var property = src.GetType().GetProperty(propertyName);
-            if (property == null)
-            {
-                // Look for a method
-                var method = src.GetType().GetMethod(propertyName);
-                return method != null ? method.Invoke(src, null) : string.Empty;
-            }
-
-            return property.GetValue(src, null);
-        }
     }
 }

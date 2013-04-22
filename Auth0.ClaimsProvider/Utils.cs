@@ -1,6 +1,8 @@
 ﻿namespace Auth0.ClaimsProvider
 {
     using System.Linq;
+    using System.Threading;
+    using Microsoft.IdentityModel.Claims;
     using Microsoft.SharePoint.Administration;
     using Microsoft.SharePoint.Administration.Claims;
 
@@ -49,6 +51,14 @@
             catch
             {
             }
+        }
+
+        public static string GetClaimsValue(string claimType)
+        {
+            var claimsIdentity = Thread.CurrentPrincipal.Identity as ClaimsIdentity;
+            return claimsIdentity != null && claimsIdentity.IsAuthenticated && claimsIdentity.Claims.Any(c => c.ClaimType == claimType) ?
+                claimsIdentity.Claims.First(c => c.ClaimType == claimType).Value :
+                string.Empty;
         }
 
         public static object GetPropertyValue(object src, string propertyName)

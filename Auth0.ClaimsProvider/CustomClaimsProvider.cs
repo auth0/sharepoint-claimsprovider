@@ -15,6 +15,7 @@
     {
         private const string SocialHierarchyNode = "Social";
         private const string EnterpriseHierarchyNode = "Enterprise";
+        private const string ClientIdClaimsType = "http://schemas.auth0.com/clientID";
 
         private readonly IConfigurationRepository configurationRepository;
 
@@ -172,8 +173,6 @@
 
             SPSecurity.RunWithElevatedPrivileges(delegate
             {
-                this.Initialize();
-
                 this.ResolveInputBulk(resolveInput.Value, string.Empty, true);
                 
                 if (this.consolidatedResults != null && this.consolidatedResults.Count > 0)
@@ -198,8 +197,6 @@
 
             SPSecurity.RunWithElevatedPrivileges(delegate
             {
-                this.Initialize();
-
                 this.ResolveInputBulk(resolveInput, string.Empty, false);
 
                 if (this.consolidatedResults != null)
@@ -231,8 +228,6 @@
             SPProviderHierarchyNode matchNode = null;
             SPSecurity.RunWithElevatedPrivileges(delegate
             {
-                this.Initialize();
-
                 this.ResolveInputBulk(searchPattern, hierarchyNodeID, false);
 
                 if (this.consolidatedResults != null)
@@ -280,11 +275,21 @@
             {
                 this.auth0Config = this.configurationRepository.GetConfiguration();
 
-                // TODO: validate clientId, clientSecret and domain
-                this.auth0Client = new Auth0.Client(
-                    this.auth0Config.ClientId,
-                    this.auth0Config.ClientSecret,
-                    this.auth0Config.Domain);
+                try
+                {
+                    var clientsIds = this.auth0Config.ClientId.Split(',');
+                    var clientsSecrets = this.auth0Config.ClientSecret.Split(',');
+                    var clientIdIndex = Array.IndexOf(clientsIds, Utils.GetClaimsValue(ClientIdClaimsType));
+
+                    this.auth0Client = new Auth0.Client(
+                        clientsIds[clientIdIndex],
+                        clientsSecrets[clientIdIndex],
+                        this.auth0Config.Domain);
+                }
+                catch (Exception ex)
+                {
+                    Utils.LogToULS(ex.ToString(), TraceSeverity.Unexpected, EventSeverity.Error);
+                }
 
                 this.alwaysResolveValue = this.auth0Config.AlwaysResolveUserInput;
                 this.pickerEntityGroupName = this.auth0Config.PickerEntityGroupName;

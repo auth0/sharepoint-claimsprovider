@@ -48,7 +48,8 @@
     <table border="0" cellspacing="0" cellpadding="0" width="100%">
         <wssuc:InputFormSection Title="Auth0 settings" runat="server">
             <template_description>
-			    <SharePoint:EncodedLiteral ID="EncodedLiteral1" runat="server" text="Specify Auth0 settings." EncodeMethod='HtmlEncodeAllowSimpleTextFormatting'/>
+			    <SharePoint:EncodedLiteral ID="EncodedLiteral1" runat="server" text="You need to specify one Client ID/Secret for each application (using comma-separated values)." 
+                                           EncodeMethod='HtmlEncodeAllowSimpleTextFormatting'/>
 		    </template_description>
             
             <template_inputformcontrols>
@@ -67,7 +68,7 @@
 						    <br/>
 						    <SharePoint:EncodedLiteral ID="EncodedLiteral4" runat="server" text="Client ID:" EncodeMethod='HtmlEncode'/>
 						    <br/>
-						    <wssawc:InputFormTextBox title="Client ID" class="ms-input" ID="ClientIdTextBox" Runat="server" Width="100%" MaxLength="255" />
+						    <wssawc:InputFormTextBox title="Client ID" class="ms-input" ID="ClientIdTextBox" TextMode="MultiLine" Rows="3" Runat="server" Width="100%" />
 						    <br/>
 					    </Template_control>
 				    </wssuc:InputFormControl>
@@ -76,7 +77,7 @@
 						    <br/>
 						    <SharePoint:EncodedLiteral ID="EncodedLiteral5" runat="server" text="Client Secret:" EncodeMethod='HtmlEncode'/>
 						    <br/>
-						    <wssawc:InputFormTextBox title="Client Secret" class="ms-input" ID="ClientSecretTextBox" Runat="server" Width="100%" MaxLength="255" />
+						    <wssawc:InputFormTextBox title="Client Secret" class="ms-input" ID="ClientSecretTextBox" TextMode="MultiLine" Rows="3" Runat="server" Width="100%" />
 						    <br/>
 					    </Template_control>
 				    </wssuc:InputFormControl>
@@ -85,7 +86,7 @@
 		    </template_inputformcontrols>
         </wssuc:InputFormSection>
 
-        <wssuc:InputFormSection runat="server" Title="Always resolve the user input" Description="Always display the input that user types as resolved even if it does not exist." id="IFSGeneralSettings1">
+        <wssuc:InputFormSection runat="server" Title="Always resolve the user input" Description="In the people picker control, when a connection type was selected, display the input that user types as resolved even if it does not exist." id="IFSGeneralSettings1">
             <template_inputformcontrols>
 				<asp:Checkbox Checked="false" Runat="server" Name="AlwaysResolveUserInputCheckbox" 
                               ID="AlwaysResolveUserInputCheckbox" Text="Always resolve the user input" />

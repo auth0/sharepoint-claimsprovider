@@ -10,8 +10,8 @@ Auth0 Claims Provider for SharePoint 2010
 
   1. Open solution and enable "NuGet Package Restore"
   2. Compile solution
-  2. Right click on project -> Package (that will generate a .wsp file)
-  3. Open a SharePoint Powershell session to install and deploy the solution:
+  3. Right click on project -> Package (that will generate a .wsp file)
+  4. Open a SharePoint Powershell session to install and deploy the solution:
 
   ~~~ps1
   Add-SPSolution -LiteralPath "<path to .wsp file>"
@@ -22,8 +22,8 @@ Auth0 Claims Provider for SharePoint 2010
 
   1. When enable Auth0 for the SharePoint application, make sure that "Client ID" claim (http://schemas.auth0.com/clientID) is part of the list of required claims
   2. Go to Central Admin -> Security
-  2. Under General Security section, click on "Configure Auth0 Claims Provider"
-  3. Set the required configuration parameters (like domain, client id and client secret)
+      1. Under General Security section, click on "Configure Auth0 Claims Provider"
+      2. Set the required configuration parameters (like domain, client ID and client secret)
 
 ## Documentation
 

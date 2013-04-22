@@ -20,7 +20,8 @@ Auth0 Claims Provider for SharePoint 2010
 
 ## Configuration
 
-  1. Go to Central Admin -> Security
+  1. When enable Auth0 for the SharePoint application, make sure that "Client ID" claim (http://schemas.auth0.com/clientID) is part of the list of required claims
+  2. Go to Central Admin -> Security
   2. Under General Security section, click on "Configure Auth0 Claims Provider"
   3. Set the required configuration parameters (like domain, client id and client secret)
 
@@ -31,3 +32,4 @@ For more information about <a href="http://auth0.com" target="_blank">auth0</a> 
 ## License
 
 This SharePoint feature is MIT licensed.
+http://schemas.auth0.com/clientID

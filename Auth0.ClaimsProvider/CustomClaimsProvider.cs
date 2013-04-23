@@ -13,10 +13,11 @@
 
     public class CustomClaimsProvider : SPClaimProvider
     {
+        public const string IdentifierClaimsType = "http://schemas.auth0.com/connection_email";
+        public const string ClientIdClaimsType = "http://schemas.auth0.com/clientID";
+        public const char IdentifierValuesSeparator = '|';
         private const string SocialHierarchyNode = "Social";
         private const string EnterpriseHierarchyNode = "Enterprise";
-        private const string IdentifierClaimsType = "http://schemas.auth0.com/connection_email";
-        private const string ClientIdClaimsType = "http://schemas.auth0.com/clientID";
 
         private readonly IConfigurationRepository configurationRepository;
 
@@ -86,16 +87,6 @@
             get { return "Federated Users (Auth0)"; }
         }
 
-        protected virtual string PickerEntityDisplayText
-        {
-            get { return "{0} ({1})"; }
-        }
-
-        protected virtual string PickerEntityOnMouseOver
-        {
-            get { return "[{0}] {1} ({2} = {3})"; }
-        }
-
         protected override void FillClaimTypes(List<string> claimTypes)
         {
             if (claimTypes == null)
@@ -132,6 +123,14 @@
             {
                 this.CreateConnectionsNodes(hierarchy);
             }
+            else if (hierarchyNodeID.Equals(EnterpriseHierarchyNode, StringComparison.OrdinalIgnoreCase))
+            {
+                this.CreateEnterpriseConnectionsNodes(hierarchy);
+            }
+            else if (hierarchyNodeID.Equals(SocialHierarchyNode, StringComparison.OrdinalIgnoreCase))
+            {
+                this.CreateSocialConnectionsNodes(hierarchy);
+            }
         }
 
         protected override void FillResolve(Uri context, string[] entityTypes, SPClaim resolveInput, List<PickerEntity> resolved)
@@ -146,11 +145,12 @@
 
             SPSecurity.RunWithElevatedPrivileges(delegate
             {
-                var input = resolveInput.Value.Contains('|') ?
-                    resolveInput.Value.Split('|')[1] : resolveInput.Value;
-                var connectionName = resolveInput.Value.Contains('|') ?
-                    resolveInput.Value.Split('|')[0] : string.Empty;
+                var input = resolveInput.Value.Contains(IdentifierValuesSeparator) ?
+                    resolveInput.Value.Split(IdentifierValuesSeparator)[1] : resolveInput.Value;
+                var connectionName = resolveInput.Value.Contains(IdentifierValuesSeparator) ?
+                    resolveInput.Value.Split(IdentifierValuesSeparator)[0] : string.Empty;
 
+                this.Initialize();
                 this.ResolveInputBulk(input, connectionName, true);
                 
                 if (this.consolidatedResults != null && this.consolidatedResults.Count > 0)
@@ -161,7 +161,18 @@
 
                 if (this.alwaysResolveValue)
                 {
-                    // TODO
+                    var user = new Auth0.User
+                    {
+                        Email = input,
+                        Name = string.Empty,
+                        Picture = string.Empty,
+                        Identities = new List<Identity> 
+                        { 
+                            new Identity { Connection = connectionName } 
+                        }
+                    };
+
+                    resolved.Add(this.GetPickerEntity(user));
                 }
             });
         }
@@ -170,6 +181,7 @@
         {
             SPSecurity.RunWithElevatedPrivileges(delegate
             {
+                this.Initialize();
                 this.ResolveInputBulk(resolveInput, string.Empty, false);
 
                 if (this.consolidatedResults != null)
@@ -178,11 +190,6 @@
                     {
                         resolved.Add(result.PickerEntity);
                     }
-                }
-
-                if (this.alwaysResolveValue)
-                {
-                    // TODO
                 }
             });
         }
@@ -196,42 +203,91 @@
             SPProviderHierarchyNode matchNode = null;
             SPSecurity.RunWithElevatedPrivileges(delegate
             {
+                this.Initialize();
                 this.ResolveInputBulk(searchPattern, hierarchyNodeID, false);
 
                 if (this.consolidatedResults != null)
                 {
                     this.CreateConnectionsNodes(searchTree);
 
-                    foreach (var consolidatedResult in this.consolidatedResults)
+                    if (this.alwaysResolveValue)
                     {
-                        // Add current PickerEntity to the corresponding attribute in the hierarchy
-                        var connectionNode = consolidatedResult.Auth0User.Identities.First().IsSocial ?
-                            searchTree.Children.First(c => c.HierarchyNodeID == SocialHierarchyNode.ToLowerInvariant()) :
-                            searchTree.Children.First(c => c.HierarchyNodeID == EnterpriseHierarchyNode.ToLowerInvariant());
-
-                        if (connectionNode.HasChild(consolidatedResult.Attribute.PeoplePickerAttributeHierarchyNodeId))
+                        if (!string.IsNullOrEmpty(hierarchyNodeID) &&
+                            !IsConnectionTypeNode(hierarchyNodeID) &&
+                            Utils.ValidEmail(searchPattern))
                         {
-                            matchNode = connectionNode.Children.First(
-                                c => c.HierarchyNodeID == consolidatedResult.Attribute.PeoplePickerAttributeHierarchyNodeId);
-                        }
-                        else
-                        {
-                            matchNode = new SPProviderHierarchyNode(
-                                ProviderInternalName, 
-                                consolidatedResult.Attribute.PeoplePickerAttributeDisplayName, 
-                                consolidatedResult.Attribute.PeoplePickerAttributeHierarchyNodeId, 
-                                true);
+                            Auth0.Connection socialConnection = null;
 
-                            searchTree.AddChild(matchNode);
-                        }
+                            try
+                            {
+                                var socialConnections = this.auth0Client.GetSocialConnections();
+                                if (socialConnections != null)
+                                {
+                                    socialConnection = socialConnections.SingleOrDefault(c => c.Name.Equals(hierarchyNodeID, StringComparison.OrdinalIgnoreCase) && c.Enabled);
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Utils.LogToULS(ex.ToString(), TraceSeverity.Unexpected, EventSeverity.Error);
+                            }
 
-                        matchNode.AddEntity(consolidatedResult.PickerEntity);
+                            var claimAttribute = new ClaimAttribute
+                            {
+                                ClaimEntityType = SPClaimEntityTypes.User,
+                                PeoplePickerAttributeDisplayName = hierarchyNodeID,
+                                PeoplePickerAttributeHierarchyNodeId = hierarchyNodeID
+                            };
+
+                            var user = new Auth0.User
+                            {
+                                Email = searchPattern,
+                                Name = string.Empty,
+                                Picture = string.Empty,
+                                Identities = new List<Identity> 
+                                { 
+                                    new Identity { Connection = hierarchyNodeID, IsSocial = socialConnection != null } 
+                                }
+                            };
+
+                            this.consolidatedResults.Add(new ConsolidatedResult
+                            {
+                                Attribute = claimAttribute,
+                                Auth0User = user,
+                                PickerEntity = this.GetPickerEntity(user)
+                            });
+                        }
                     }
-                }
 
-                if (this.alwaysResolveValue)
-                {
-                    // TODO
+                    if (this.consolidatedResults.Count > 0)
+                    {
+                        foreach (var consolidatedResult in this.consolidatedResults)
+                        {
+                            // Add current PickerEntity to the corresponding attribute in the hierarchy
+                            var connectionNode = consolidatedResult.Auth0User.Identities.First().IsSocial ?
+                                searchTree.Children.First(c => c.HierarchyNodeID == SocialHierarchyNode.ToLowerInvariant()) :
+                                searchTree.Children.First(c => c.HierarchyNodeID == EnterpriseHierarchyNode.ToLowerInvariant());
+
+                            if (connectionNode.HasChild(consolidatedResult.Attribute.PeoplePickerAttributeHierarchyNodeId))
+                            {
+                                matchNode = connectionNode.Children.First(
+                                    c => c.HierarchyNodeID == consolidatedResult.Attribute.PeoplePickerAttributeHierarchyNodeId);
+                            }
+                            else
+                            {
+                                matchNode = new SPProviderHierarchyNode(
+                                    ProviderInternalName,
+                                    consolidatedResult.Attribute.PeoplePickerAttributeDisplayName,
+                                    consolidatedResult.Attribute.PeoplePickerAttributeHierarchyNodeId,
+                                    true);
+
+                                searchTree.AddChild(matchNode);
+                            }
+
+                            matchNode.AddEntity(consolidatedResult.PickerEntity);
+                        }
+
+                        return;
+                    }
                 }
             });
         }
@@ -264,7 +320,7 @@
             }
         }
 
-        protected virtual void ResolveInputBulk(string input, string connectionName, bool exactSearch)
+        protected virtual void ResolveInputBulk(string input, string selectedNode, bool exactSearch)
         {
             this.consolidatedResults = new Collection<ConsolidatedResult>();
 
@@ -277,15 +333,26 @@
 
             try
             {
-                if (!string.IsNullOrEmpty(connectionName))
+                if (!string.IsNullOrEmpty(selectedNode))
                 {
-                    users = this.auth0Client.GetUsersByConnection(connectionName, input);
+                    if (selectedNode == SocialHierarchyNode.ToLowerInvariant())
+                    {
+                        users = this.auth0Client.GetSocialUsers(input);
+                    }
+                    else if (selectedNode == EnterpriseHierarchyNode.ToLowerInvariant())
+                    {
+                        users = this.auth0Client.GetEnterpriseUsers(input);
+                    }
+                    else
+                    {
+                        users = this.auth0Client.GetUsersByConnection(selectedNode, input);
+                    }
                 }
                 else
                 {
                     var socialUsers = this.auth0Client.GetSocialUsers(input);
                     var enterpriseUsers = this.auth0Client.GetEnterpriseUsers(input);
-
+                    
                     users = socialUsers.Union(enterpriseUsers);
                 }
             }
@@ -298,8 +365,7 @@
             {
                 foreach (var user in users)
                 {
-                    var pickerAttributeName = string.IsNullOrEmpty(connectionName) ?
-                        user.Identities.First().Connection : connectionName;
+                    var pickerAttributeName = user.Identities.First().Connection;
 
                     var claimAttribute = new ClaimAttribute
                     {
@@ -329,12 +395,16 @@
             PickerEntity pe = CreatePickerEntity();
             pe.EntityType = SPClaimEntityTypes.User;
 
-            pe.DisplayText = string.Format(this.PickerEntityDisplayText, auth0User.Name, auth0User.Email);
+            pe.DisplayText = 
+                !string.IsNullOrEmpty(auth0User.Name) ?
+                    string.Format("{0} ({1})", auth0User.Name, auth0User.Email) :
+                    auth0User.Email;
+            
             pe.Description = string.Format(
-                this.PickerEntityOnMouseOver,
-                ProviderInternalName + " | " + auth0User.Identities.First().Connection,
+                "[{0}] Connection: {1}; Email: {2}; Name: {3}",
+                ProviderInternalName,
+                auth0User.Identities.First().Connection,
                 auth0User.Email,
-                "Name",
                 auth0User.Name);
 
             pe.Claim = claim;
@@ -362,7 +432,7 @@
             var parentNode = GetParentNode(connectionType);
             if (connections != null)
             {
-                foreach (var connection in connections.Where(c => c.Enabled))
+                foreach (var connection in connections.Where(c => c.Enabled).OrderBy(c => c.Name))
                 {
                     parentNode.AddChild(
                         new SPProviderHierarchyNode(
@@ -376,14 +446,24 @@
             hierarchy.AddChild(parentNode);
         }
 
+        private static bool IsConnectionTypeNode(string nodeId)
+        {
+            return nodeId.Equals(SocialHierarchyNode, StringComparison.OrdinalIgnoreCase) ||
+                   nodeId.Equals(EnterpriseHierarchyNode, StringComparison.OrdinalIgnoreCase);
+        }
+
         private void CreateConnectionsNodes(SPProviderHierarchyTree hierarchy)
         {
-            IEnumerable<Connection> enterpriseConnections = null;
+            this.CreateEnterpriseConnectionsNodes(hierarchy);
+            this.CreateSocialConnectionsNodes(hierarchy);
+        }
+
+        private void CreateSocialConnectionsNodes(SPProviderHierarchyTree hierarchy)
+        {
             IEnumerable<Connection> socialConnections = null;
 
             try
             {
-                enterpriseConnections = this.auth0Client.GetEnterpriseConnections();
                 socialConnections = this.auth0Client.GetSocialConnections();
             }
             catch (Exception ex)
@@ -391,8 +471,23 @@
                 Utils.LogToULS(ex.ToString(), TraceSeverity.Unexpected, EventSeverity.Error);
             }
 
-            CreateConnectionNodes(hierarchy, EnterpriseHierarchyNode, enterpriseConnections);
             CreateConnectionNodes(hierarchy, SocialHierarchyNode, socialConnections);
+        }
+
+        private void CreateEnterpriseConnectionsNodes(SPProviderHierarchyTree hierarchy)
+        {
+            IEnumerable<Connection> enterpriseConnections = null;
+
+            try
+            {
+                enterpriseConnections = this.auth0Client.GetEnterpriseConnections();
+            }
+            catch (Exception ex)
+            {
+                Utils.LogToULS(ex.ToString(), TraceSeverity.Unexpected, EventSeverity.Error);
+            }
+
+            CreateConnectionNodes(hierarchy, EnterpriseHierarchyNode, enterpriseConnections);
         }
     }
 }

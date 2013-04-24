@@ -20,7 +20,7 @@ Auth0 Claims Provider for SharePoint 2010
 
 ## Configuration
 
-  1. When enable Auth0 for the SharePoint application, make sure that "Client ID" claim (http://schemas.auth0.com/clientID) is part of the list of required claims
+  1. When enable Auth0 for the SharePoint application, make sure that "Client ID" (http://schemas.auth0.com/clientID) and "Connection" (http://schemas.auth0.com/connection) claims are part of the list of required claims
   2. Associate Auth0 (SP Trusted Identity Token Issuer) with our Claims Provider:
   
   ~~~ps1

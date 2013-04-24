@@ -119,6 +119,11 @@
 
         protected override void FillHierarchy(Uri context, string[] entityTypes, string hierarchyNodeID, int numberOfLevels, SPProviderHierarchyTree hierarchy)
         {
+            if (!this.SetSPTrustInCurrentContext(context))
+            {
+                return;
+            }
+
             if (hierarchyNodeID == null)
             {
                 this.CreateConnectionsNodes(hierarchy);
@@ -143,6 +148,11 @@
                 return;
             }
 
+            if (!this.SetSPTrustInCurrentContext(context))
+            {
+                return;
+            }
+
             SPSecurity.RunWithElevatedPrivileges(delegate
             {
                 var input = resolveInput.Value.Contains(IdentifierValuesSeparator) ?
@@ -151,7 +161,7 @@
                     resolveInput.Value.Split(IdentifierValuesSeparator)[0] : string.Empty;
 
                 this.Initialize();
-                this.ResolveInputBulk(input, connectionName, true);
+                this.ResolveInputBulk(input, connectionName);
                 
                 if (this.consolidatedResults != null && this.consolidatedResults.Count > 0)
                 {
@@ -179,10 +189,15 @@
 
         protected override void FillResolve(Uri context, string[] entityTypes, string resolveInput, List<PickerEntity> resolved)
         {
+            if (!this.SetSPTrustInCurrentContext(context))
+            {
+                return;
+            }
+
             SPSecurity.RunWithElevatedPrivileges(delegate
             {
                 this.Initialize();
-                this.ResolveInputBulk(resolveInput, string.Empty, false);
+                this.ResolveInputBulk(resolveInput, string.Empty);
 
                 if (this.consolidatedResults != null)
                 {
@@ -200,11 +215,16 @@
 
         protected override void FillSearch(Uri context, string[] entityTypes, string searchPattern, string hierarchyNodeID, int maxCount, SPProviderHierarchyTree searchTree)
         {
+            if (!this.SetSPTrustInCurrentContext(context))
+            {
+                return;
+            }
+
             SPProviderHierarchyNode matchNode = null;
             SPSecurity.RunWithElevatedPrivileges(delegate
             {
                 this.Initialize();
-                this.ResolveInputBulk(searchPattern, hierarchyNodeID, false);
+                this.ResolveInputBulk(searchPattern, hierarchyNodeID);
 
                 if (this.consolidatedResults != null)
                 {
@@ -320,7 +340,7 @@
             }
         }
 
-        protected virtual void ResolveInputBulk(string input, string selectedNode, bool exactSearch)
+        protected virtual void ResolveInputBulk(string input, string selectedNode)
         {
             this.consolidatedResults = new Collection<ConsolidatedResult>();
 
@@ -416,6 +436,58 @@
             pe.EntityData["Picture"] = auth0User.Picture;
 
             return pe;
+        }
+
+        protected virtual bool SetSPTrustInCurrentContext(Uri context)
+        {
+            var webApp = SPWebApplication.Lookup(context);
+            if (webApp == null)
+            {
+                return false;
+            }
+
+            SPSite site = null;
+
+            try
+            {
+                site = new SPSite(context.AbsoluteUri);
+            }
+            catch (Exception ex)
+            {
+                // The root site doesn't exist
+                this.associatedSPTrustedLoginProvider = Utils.GetSPTrustAssociatedWithCP(ProviderInternalName);
+                return this.associatedSPTrustedLoginProvider != null;
+            }
+
+            if (site == null)
+            {
+                return false;
+            }
+
+            SPUrlZone currentZone = site.Zone;
+            SPIisSettings iisSettings = webApp.GetIisSettingsWithFallback(currentZone);
+            site.Dispose();
+
+            if (!iisSettings.UseTrustedClaimsAuthenticationProvider)
+            {
+                return false;
+            }
+
+            // Get the list of authentication providers associated with the zone
+            foreach (SPAuthenticationProvider prov in iisSettings.ClaimsAuthenticationProviders)
+            {
+                if (prov.GetType() == typeof(Microsoft.SharePoint.Administration.SPTrustedAuthenticationProvider))
+                {
+                    // Check if the current SPTrustedAuthenticationProvider is associated with the claim provider
+                    if (prov.ClaimProviderName == ProviderInternalName)
+                    {
+                        this.associatedSPTrustedLoginProvider = Utils.GetSPTrustAssociatedWithCP(ProviderInternalName);
+                        return this.associatedSPTrustedLoginProvider != null;
+                    }
+                }
+            }
+
+            return false;
         }
 
         private static SPProviderHierarchyNode GetParentNode(string nodeName)

@@ -143,15 +143,15 @@
 
         protected override void FillResolve(Uri context, string[] entityTypes, SPClaim resolveInput, List<PickerEntity> resolved)
         {
-            if (!string.Equals(
-                    resolveInput.OriginalIssuer,
-                    SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, this.associatedSPTrustedLoginProvider.Name),
-                    StringComparison.OrdinalIgnoreCase))
+            if (!this.SetSPTrustInCurrentContext(context))
             {
                 return;
             }
 
-            if (!this.SetSPTrustInCurrentContext(context))
+            if (!string.Equals(
+                    resolveInput.OriginalIssuer,
+                    SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, this.associatedSPTrustedLoginProvider.Name),
+                    StringComparison.OrdinalIgnoreCase))
             {
                 return;
             }
@@ -163,7 +163,6 @@
                 var connectionName = resolveInput.Value.Contains(IdentifierValuesSeparator) ?
                     resolveInput.Value.Split(IdentifierValuesSeparator)[0] : string.Empty;
 
-                this.Initialize();
                 this.ResolveInputBulk(input, connectionName);
                 
                 if (this.consolidatedResults != null && this.consolidatedResults.Count > 0)

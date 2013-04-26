@@ -48,7 +48,7 @@
     <table border="0" cellspacing="0" cellpadding="0" width="100%">
         <wssuc:InputFormSection Title="Auth0 settings" runat="server">
             <template_description>
-			    <SharePoint:EncodedLiteral ID="EncodedLiteral1" runat="server" text="You need to specify one Client ID/Secret for each application (using comma-separated values)." 
+			    <SharePoint:EncodedLiteral ID="EncodedLiteral1" runat="server" text="Specify one Client ID/Secret for each application one by line (these values can be found in Auth0 Settings)." 
                                            EncodeMethod='HtmlEncodeAllowSimpleTextFormatting'/>
 		    </template_description>
             

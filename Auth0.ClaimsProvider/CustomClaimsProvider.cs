@@ -359,8 +359,8 @@
 
                 try
                 {
-                    var clientsIds = this.auth0Config.ClientId.Split(',');
-                    var clientsSecrets = this.auth0Config.ClientSecret.Split(',');
+                    var clientsIds = this.auth0Config.ClientId.Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
+                    var clientsSecrets = this.auth0Config.ClientSecret.Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
                     var clientIdIndex = Array.IndexOf(clientsIds, Utils.GetClaimsValue(ClientIdClaimsType));
 
                     this.auth0Client = new Auth0.Client(

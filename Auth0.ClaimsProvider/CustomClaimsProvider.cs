@@ -19,7 +19,6 @@
         public const char IdentifierValuesSeparator = '|';
         private const string SocialHierarchyNode = "Social";
         private const string EnterpriseHierarchyNode = "Enterprise";
-        private const string AllUsersWildcard = "Everyone";
 
         private readonly IConfigurationRepository configurationRepository;
 
@@ -244,76 +243,23 @@
                 {
                     this.CreateConnectionsNodes(searchTree);
 
-                    if (!string.IsNullOrEmpty(hierarchyNodeID) && !IsConnectionParentNode(hierarchyNodeID))
+                    if (string.IsNullOrEmpty(searchPattern))
                     {
-                        Auth0.Connection socialConnection = null;
-
-                        try
-                        {
-                            var socialConnections = this.auth0Client.GetSocialConnections();
-                            if (socialConnections != null)
-                            {
-                                socialConnection = socialConnections.SingleOrDefault(c => c.Name.Equals(hierarchyNodeID, StringComparison.OrdinalIgnoreCase) && c.Enabled);
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Utils.LogToULS(ex.ToString(), TraceSeverity.Unexpected, EventSeverity.Error);
-                        }
-
-                        // All users from a specific connection
-                        if (searchPattern.Equals(AllUsersWildcard, StringComparison.OrdinalIgnoreCase))
-                        {
-                            var claimAttribute = new ClaimAttribute
-                            {
-                                ClaimEntityType = SPClaimEntityTypes.FormsRole,
-                                PeoplePickerAttributeDisplayName = hierarchyNodeID,
-                                PeoplePickerAttributeHierarchyNodeId = hierarchyNodeID
-                            };
-
-                            var user = new Auth0.User
-                            {
-                                Identities = new List<Identity> 
-                                { 
-                                    new Identity { Connection = hierarchyNodeID, IsSocial = socialConnection != null } 
-                                }
-                            };
-
-                            this.consolidatedResults.Add(new ConsolidatedResult
-                            {
-                                Attribute = claimAttribute,
-                                Auth0User = user,
-                                PickerEntity = this.GetPickerEntity(user, SPClaimEntityTypes.FormsRole)
-                            });
-                        }
-                        else if (this.alwaysResolveValue && Utils.ValidEmail(searchPattern))
-                        {
-                            // Email from a specific connection
-                            var claimAttribute = new ClaimAttribute
-                            {
-                                ClaimEntityType = SPClaimEntityTypes.User,
-                                PeoplePickerAttributeDisplayName = hierarchyNodeID,
-                                PeoplePickerAttributeHierarchyNodeId = hierarchyNodeID
-                            };
-
-                            var user = new Auth0.User
-                            {
-                                Email = searchPattern,
-                                Name = string.Empty,
-                                Picture = string.Empty,
-                                Identities = new List<Identity> 
-                                { 
-                                    new Identity { Connection = hierarchyNodeID, IsSocial = socialConnection != null } 
-                                }
-                            };
-
-                            this.consolidatedResults.Add(new ConsolidatedResult
-                            {
-                                Attribute = claimAttribute,
-                                Auth0User = user,
-                                PickerEntity = this.GetPickerEntity(user, SPClaimEntityTypes.User)
-                            });
-                        }
+                        // All users from specific connection(s)
+                        var results = this.CreateAllUsersResults(hierarchyNodeID);
+                        results.ToList().ForEach(
+                            r => this.consolidatedResults.Add(r));
+                    }
+                    else if (this.alwaysResolveValue && 
+                             !string.IsNullOrEmpty(hierarchyNodeID) && !IsConnectionParentNode(hierarchyNodeID) &&
+                             Utils.ValidEmail(searchPattern) &&
+                             !this.consolidatedResults.Any(
+                                r => r.Auth0User.Email.Equals(searchPattern, StringComparison.OrdinalIgnoreCase) &&
+                                     r.Attribute.PeoplePickerAttributeHierarchyNodeId == hierarchyNodeID))
+                    {
+                        // Specific email from specific connection
+                        var result = this.CreateUniqueResult(searchPattern, hierarchyNodeID);
+                        this.consolidatedResults.Add(result);
                     }
 
                     if (this.consolidatedResults.Count > 0)
@@ -593,34 +539,138 @@
 
         private void CreateSocialConnectionsNodes(SPProviderHierarchyTree hierarchy)
         {
-            IEnumerable<Connection> socialConnections = null;
-
-            try
-            {
-                socialConnections = this.auth0Client.GetSocialConnections();
-            }
-            catch (Exception ex)
-            {
-                Utils.LogToULS(ex.ToString(), TraceSeverity.Unexpected, EventSeverity.Error);
-            }
-
+            var socialConnections = this.GetConnections(SocialHierarchyNode);
             CreateConnectionNodes(hierarchy, SocialHierarchyNode, socialConnections);
         }
 
         private void CreateEnterpriseConnectionsNodes(SPProviderHierarchyTree hierarchy)
         {
-            IEnumerable<Connection> enterpriseConnections = null;
+            var enterpriseConnections = this.GetConnections(EnterpriseHierarchyNode);
+            CreateConnectionNodes(hierarchy, EnterpriseHierarchyNode, enterpriseConnections);
+        }
+
+        private IEnumerable<Auth0.Connection> GetConnections()
+        {
+            return this.GetConnections(string.Empty);
+        }
+
+        private IEnumerable<Auth0.Connection> GetConnections(string connectionType)
+        {
+            IEnumerable<Auth0.Connection> connections = null;
 
             try
             {
-                enterpriseConnections = this.auth0Client.GetEnterpriseConnections();
+                if (string.IsNullOrEmpty(connectionType))
+                {
+                    // All connections
+                    connections = this.auth0Client.GetConnections();
+                }
+                else if (connectionType.Equals(EnterpriseHierarchyNode, StringComparison.OrdinalIgnoreCase))
+                {
+                    connections = this.auth0Client.GetEnterpriseConnections();
+                }
+                else if (connectionType.Equals(SocialHierarchyNode, StringComparison.OrdinalIgnoreCase))
+                {
+                    connections = this.auth0Client.GetSocialConnections();
+                }
             }
             catch (Exception ex)
             {
                 Utils.LogToULS(ex.ToString(), TraceSeverity.Unexpected, EventSeverity.Error);
             }
 
-            CreateConnectionNodes(hierarchy, EnterpriseHierarchyNode, enterpriseConnections);
+            return connections != null ? connections : new List<Auth0.Connection>();
+        }
+
+        private ConsolidatedResult CreateUniqueResult(string email, string connectionName)
+        {
+            var claimAttribute = new ClaimAttribute
+            {
+                ClaimEntityType = SPClaimEntityTypes.User,
+                PeoplePickerAttributeDisplayName = connectionName,
+                PeoplePickerAttributeHierarchyNodeId = connectionName
+            };
+
+            var user = new Auth0.User
+            {
+                Email = email,
+                Name = string.Empty,
+                Picture = string.Empty,
+                Identities = new List<Identity> 
+                { 
+                    new Identity 
+                    { 
+                        Connection = connectionName, 
+                        IsSocial = this.IsSocialConnection(connectionName)
+                    }
+                }
+            };
+
+            return new ConsolidatedResult
+            {
+                Attribute = claimAttribute,
+                Auth0User = user,
+                PickerEntity = this.GetPickerEntity(user, SPClaimEntityTypes.User)
+            };
+        }
+
+        private IEnumerable<ConsolidatedResult> CreateAllUsersResults(string selectedNode)
+        {
+            var results = new List<ConsolidatedResult>();
+            var identities = new List<Identity>();
+
+            if (string.IsNullOrEmpty(selectedNode) ||
+                IsConnectionParentNode(selectedNode))
+            {
+                // All | Social | Enterprise
+                var connections = this.GetConnections(selectedNode);
+                foreach (var connection in connections)
+                {
+                    identities.Add(new Identity
+                    {
+                        Connection = connection.Name,
+                        IsSocial = this.IsSocialConnection(connection.Name)
+                    });
+                }
+            }
+            else
+            {
+                // Specific connection node
+                identities.Add(new Identity
+                {
+                    Connection = selectedNode,
+                    IsSocial = this.IsSocialConnection(selectedNode)
+                });
+            }
+
+            foreach (var identity in identities)
+            {
+                var claimAttribute = new ClaimAttribute
+                {
+                    ClaimEntityType = SPClaimEntityTypes.FormsRole,
+                    PeoplePickerAttributeDisplayName = identity.Connection,
+                    PeoplePickerAttributeHierarchyNodeId = identity.Connection
+                };
+
+                var user = new Auth0.User
+                {
+                    Identities = new List<Identity> { identity }
+                };
+
+                results.Add(new ConsolidatedResult
+                {
+                    Attribute = claimAttribute,
+                    Auth0User = user,
+                    PickerEntity = this.GetPickerEntity(user, SPClaimEntityTypes.FormsRole)
+                });
+            }
+
+            return results;
+        }
+
+        private bool IsSocialConnection(string connectionName)
+        {
+            return this.GetConnections(SocialHierarchyNode).Any(c => c.Name.Equals(connectionName, StringComparison.OrdinalIgnoreCase));
         }
     }
 }

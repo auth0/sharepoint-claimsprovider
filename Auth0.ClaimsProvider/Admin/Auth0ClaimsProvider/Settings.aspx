@@ -86,13 +86,6 @@
 		    </template_inputformcontrols>
         </wssuc:InputFormSection>
 
-        <wssuc:InputFormSection runat="server" Title="Always resolve the user input" Description="In the people picker control, when a connection type was selected, display the input that user types as resolved even if it does not exist." id="IFSGeneralSettings1">
-            <template_inputformcontrols>
-				<asp:Checkbox Checked="false" Runat="server" Name="AlwaysResolveUserInputCheckbox" 
-                              ID="AlwaysResolveUserInputCheckbox" Text="Always resolve the user input" />
-			</template_inputformcontrols>
-        </wssuc:InputFormSection>
-
         <wssuc:InputFormSection runat="server" Title="People picker display text" Description="This text is displayed in the header of the results list in the people picker control." id="IFSGeneralSettings2">
             <template_inputformcontrols>
 				<wssawc:InputFormTextBox title="Text to display" class="ms-input" ID="PickerEntityGroupNameTextBox" 

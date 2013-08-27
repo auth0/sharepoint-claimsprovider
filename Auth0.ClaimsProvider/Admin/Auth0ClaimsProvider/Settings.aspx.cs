@@ -49,7 +49,6 @@
                 auth0Config.Domain = this.DomainTextBox.Text;
                 auth0Config.ClientId = this.ClientIdTextBox.Text;
                 auth0Config.ClientSecret = this.ClientSecretTextBox.Text;
-                auth0Config.AlwaysResolveUserInput = this.AlwaysResolveUserInputCheckbox.Checked;
                 auth0Config.PickerEntityGroupName = this.PickerEntityGroupNameTextBox.Text;
                 this.configurationRepository.SaveConfiguration(auth0Config);
                 this.Web.AllowUnsafeUpdates = false;
@@ -89,7 +88,6 @@
                 this.DomainTextBox.Text = auth0Config.Domain;
                 this.ClientIdTextBox.Text = auth0Config.ClientId;
                 this.ClientSecretTextBox.Text = auth0Config.ClientSecret;
-                this.AlwaysResolveUserInputCheckbox.Checked = auth0Config.AlwaysResolveUserInput;
                 this.PickerEntityGroupNameTextBox.Text = auth0Config.PickerEntityGroupName;
             }
         }

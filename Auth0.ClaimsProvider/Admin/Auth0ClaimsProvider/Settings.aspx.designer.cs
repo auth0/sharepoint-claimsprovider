@@ -103,24 +103,6 @@ namespace Auth0.ClaimsProvider.AdminWeb {
         protected global::Microsoft.SharePoint.WebControls.InputFormTextBox ClientSecretTextBox;
         
         /// <summary>
-        /// IFSGeneralSettings1 control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.UserControl IFSGeneralSettings1;
-        
-        /// <summary>
-        /// AlwaysResolveUserInputCheckbox control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.CheckBox AlwaysResolveUserInputCheckbox;
-        
-        /// <summary>
         /// IFSGeneralSettings2 control.
         /// </summary>
         /// <remarks>

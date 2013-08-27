@@ -23,7 +23,7 @@ namespace Auth0.ClaimsProvider.Features.Auth0.ClaimsProvider.Feature
         {
             get
             {
-                return "Auth0 Claims Provider for Sharepoint 2010";
+                return "Auth0 Claims Provider for Sharepoint";
             }
         }
 

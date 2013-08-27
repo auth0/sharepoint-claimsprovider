@@ -19,13 +19,15 @@
         public const char IdentifierValuesSeparator = '|';
         private const string SocialHierarchyNode = "Social";
         private const string EnterpriseHierarchyNode = "Enterprise";
+        private const string UsersNode = "Users";
+        private const string GroupsNode = "Groups";
+
 
         private readonly IConfigurationRepository configurationRepository;
 
         private SPTrustedLoginProvider associatedSPTrustedLoginProvider; // Name of the SPTrustedLoginProvider associated with the claim provider
         private Auth0.Client auth0Client;
         private Auth0Config auth0Config;
-        private ICollection<ConsolidatedResult> consolidatedResults;
         private bool alwaysResolveValue;
         private string pickerEntityGroupName;
 
@@ -126,18 +128,9 @@
                 return;
             }
 
-            if (hierarchyNodeID == null)
-            {
-                this.CreateConnectionsNodes(hierarchy);
-            }
-            else if (hierarchyNodeID.Equals(EnterpriseHierarchyNode, StringComparison.OrdinalIgnoreCase))
-            {
-                this.CreateEnterpriseConnectionsNodes(hierarchy);
-            }
-            else if (hierarchyNodeID.Equals(SocialHierarchyNode, StringComparison.OrdinalIgnoreCase))
-            {
-                this.CreateSocialConnectionsNodes(hierarchy);
-            }
+            hierarchy.AddChild(new
+                    Microsoft.SharePoint.WebControls.SPProviderHierarchyNode(
+                        ProviderInternalName, UsersNode, UsersNode, true));
         }
 
         protected override void FillResolve(Uri context, string[] entityTypes, SPClaim resolveInput, List<PickerEntity> resolved)
@@ -162,11 +155,11 @@
                 var connectionName = resolveInput.Value.Contains(IdentifierValuesSeparator) ?
                     resolveInput.Value.Split(IdentifierValuesSeparator)[0] : string.Empty;
 
-                this.ResolveInputBulk(input, connectionName);
+                var consolidatedResults = this.ResolveInputBulk(input, connectionName);
                 
-                if (this.consolidatedResults != null && this.consolidatedResults.Count > 0)
+                if (consolidatedResults != null && consolidatedResults.Count > 0)
                 {
-                    resolved.Add(this.consolidatedResults.ElementAt(0).PickerEntity);
+                    resolved.Add(consolidatedResults.ElementAt(0).PickerEntity);
                     return;
                 }
 
@@ -210,11 +203,11 @@
             SPSecurity.RunWithElevatedPrivileges(delegate
             {
                 this.Initialize();
-                this.ResolveInputBulk(resolveInput, string.Empty);
+                var consolidatedResults = this.ResolveInputBulk(resolveInput, string.Empty);
 
-                if (this.consolidatedResults != null)
+                if (consolidatedResults != null)
                 {
-                    foreach (var result in this.consolidatedResults)
+                    foreach (var result in consolidatedResults)
                     {
                         resolved.Add(result.PickerEntity);
                     }
@@ -237,46 +230,34 @@
             SPSecurity.RunWithElevatedPrivileges(delegate
             {
                 this.Initialize();
-                this.ResolveInputBulk(searchPattern, hierarchyNodeID);
+                var consolidatedResults = this.ResolveInputBulk(searchPattern, hierarchyNodeID);
 
-                if (this.consolidatedResults != null)
+                if (consolidatedResults != null)
                 {
-                    this.CreateConnectionsNodes(searchTree);
-
                     if (string.IsNullOrEmpty(searchPattern))
                     {
                         // All users from specific connection(s)
                         var results = this.CreateAllUsersResults(hierarchyNodeID);
                         results.ToList().ForEach(
-                            r => this.consolidatedResults.Add(r));
+                            r => consolidatedResults.Add(r));
                     }
                     else if (this.alwaysResolveValue && 
-                             !string.IsNullOrEmpty(hierarchyNodeID) && !IsConnectionParentNode(hierarchyNodeID) &&
                              Utils.ValidEmail(searchPattern) &&
-                             !this.consolidatedResults.Any(
+                             !consolidatedResults.Any(
                                 r => r.Auth0User.Email.Equals(searchPattern, StringComparison.OrdinalIgnoreCase) &&
                                      r.Attribute.PeoplePickerAttributeHierarchyNodeId == hierarchyNodeID))
                     {
                         // Specific email from specific connection
-                        var result = this.CreateUniqueResult(searchPattern, hierarchyNodeID);
-                        this.consolidatedResults.Add(result);
+                        var result = this.CreateUniqueResult(searchPattern, UsersNode);
+                        consolidatedResults.Add(result);
                     }
 
-                    if (this.consolidatedResults.Count > 0)
+                    if (consolidatedResults.Count > 0)
                     {
-                        foreach (var consolidatedResult in this.consolidatedResults)
+                        foreach (var consolidatedResult in consolidatedResults)
                         {
                             // Add current PickerEntity to the corresponding attribute in the hierarchy
-                            var connectionNode = consolidatedResult.Auth0User.Identities.First().IsSocial ?
-                                searchTree.Children.First(c => c.HierarchyNodeID == SocialHierarchyNode.ToLowerInvariant()) :
-                                searchTree.Children.First(c => c.HierarchyNodeID == EnterpriseHierarchyNode.ToLowerInvariant());
-
-                            if (connectionNode.HasChild(consolidatedResult.Attribute.PeoplePickerAttributeHierarchyNodeId))
-                            {
-                                matchNode = connectionNode.Children.First(
-                                    c => c.HierarchyNodeID == consolidatedResult.Attribute.PeoplePickerAttributeHierarchyNodeId);
-                            }
-                            else
+                            if (!searchTree.HasChild(UsersNode))
                             {
                                 matchNode = new SPProviderHierarchyNode(
                                     ProviderInternalName,
@@ -308,6 +289,8 @@
                     var clientsIds = this.auth0Config.ClientId.Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
                     var clientsSecrets = this.auth0Config.ClientSecret.Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
                     var clientIdIndex = Array.IndexOf(clientsIds, Utils.GetClaimsValue(ClientIdClaimsType));
+                    // if clientID was not found, use the first one configured on central admin
+                    if (clientIdIndex == -1) clientIdIndex = 0;
 
                     this.auth0Client = new Auth0.Client(
                         clientsIds[clientIdIndex],
@@ -319,46 +302,28 @@
                     Utils.LogToULS(ex.ToString(), TraceSeverity.Unexpected, EventSeverity.Error);
                 }
 
-                this.alwaysResolveValue = this.auth0Config.AlwaysResolveUserInput;
+                this.alwaysResolveValue = true; //this.auth0Config.AlwaysResolveUserInput;
                 this.pickerEntityGroupName = this.auth0Config.PickerEntityGroupName;
             }
         }
 
-        protected virtual void ResolveInputBulk(string input, string selectedNode)
+        protected virtual ICollection<ConsolidatedResult> ResolveInputBulk(string input, string selectedNode)
         {
-            this.consolidatedResults = new Collection<ConsolidatedResult>();
-
+            var consolidatedResults = new Collection<ConsolidatedResult>();
+            
             if (string.IsNullOrEmpty(input))
             {
-                return;
+                return null;
             }
 
             IEnumerable<Auth0.User> users = null;
 
             try
             {
-                if (!string.IsNullOrEmpty(selectedNode))
-                {
-                    if (selectedNode == SocialHierarchyNode.ToLowerInvariant())
-                    {
-                        users = this.auth0Client.GetSocialUsers(input);
-                    }
-                    else if (selectedNode == EnterpriseHierarchyNode.ToLowerInvariant())
-                    {
-                        users = this.auth0Client.GetEnterpriseUsers(input);
-                    }
-                    else
-                    {
-                        users = this.auth0Client.GetUsersByConnection(selectedNode, input);
-                    }
-                }
-                else
-                {
-                    var socialUsers = this.auth0Client.GetSocialUsers(input);
-                    var enterpriseUsers = this.auth0Client.GetEnterpriseUsers(input);
+                var socialUsers = this.auth0Client.GetSocialUsers(input);
+                var enterpriseUsers = this.auth0Client.GetEnterpriseUsers(input);
                     
-                    users = socialUsers.Union(enterpriseUsers);
-                }
+                users = socialUsers.Union(enterpriseUsers);
             }
             catch (Exception ex)
             {
@@ -369,16 +334,14 @@
             {
                 foreach (var user in users)
                 {
-                    var pickerAttributeName = user.Identities.First().Connection;
-
                     var claimAttribute = new ClaimAttribute
                     {
                         ClaimEntityType = SPClaimEntityTypes.User,
-                        PeoplePickerAttributeDisplayName = pickerAttributeName,
-                        PeoplePickerAttributeHierarchyNodeId = pickerAttributeName
+                        PeoplePickerAttributeDisplayName = UsersNode,
+                        PeoplePickerAttributeHierarchyNodeId = UsersNode
                     };
 
-                    this.consolidatedResults.Add(new ConsolidatedResult
+                    consolidatedResults.Add(new ConsolidatedResult
                     {
                         Attribute = claimAttribute,
                         Auth0User = user,
@@ -386,6 +349,8 @@
                     });
                 }
             }
+
+            return consolidatedResults;
         }
 
         protected virtual PickerEntity GetPickerEntity(Auth0.User auth0User, string claimEntityType)
@@ -407,8 +372,7 @@
                         auth0User.Email;
 
                 pe.Description = string.Format(
-                    "[{0}] Connection: {1}; Email: {2}; Name: {3}",
-                    ProviderInternalName,
+                    "Connection: {0}; Email: {1}; Name: {2}",
                     auth0User.Identities.First().Connection,
                     auth0User.Email,
                     auth0User.Name);
@@ -506,49 +470,6 @@
                 false);
         }
 
-        private static void CreateConnectionNodes(SPProviderHierarchyTree hierarchy, string connectionType, IEnumerable<Connection> connections)
-        {
-            var parentNode = GetParentNode(connectionType);
-            if (connections != null)
-            {
-                foreach (var connection in connections.Where(c => c.Enabled).OrderBy(c => c.Name))
-                {
-                    parentNode.AddChild(
-                        new SPProviderHierarchyNode(
-                            ProviderInternalName,
-                            connection.Name,
-                            connection.Name,
-                            true));
-                }
-            }
-
-            hierarchy.AddChild(parentNode);
-        }
-
-        private static bool IsConnectionParentNode(string nodeId)
-        {
-            return nodeId.Equals(SocialHierarchyNode, StringComparison.OrdinalIgnoreCase) ||
-                   nodeId.Equals(EnterpriseHierarchyNode, StringComparison.OrdinalIgnoreCase);
-        }
-
-        private void CreateConnectionsNodes(SPProviderHierarchyTree hierarchy)
-        {
-            this.CreateEnterpriseConnectionsNodes(hierarchy);
-            this.CreateSocialConnectionsNodes(hierarchy);
-        }
-
-        private void CreateSocialConnectionsNodes(SPProviderHierarchyTree hierarchy)
-        {
-            var socialConnections = this.GetConnections(SocialHierarchyNode);
-            CreateConnectionNodes(hierarchy, SocialHierarchyNode, socialConnections);
-        }
-
-        private void CreateEnterpriseConnectionsNodes(SPProviderHierarchyTree hierarchy)
-        {
-            var enterpriseConnections = this.GetConnections(EnterpriseHierarchyNode);
-            CreateConnectionNodes(hierarchy, EnterpriseHierarchyNode, enterpriseConnections);
-        }
-
         private IEnumerable<Auth0.Connection> GetConnections()
         {
             return this.GetConnections(string.Empty);
@@ -619,27 +540,13 @@
             var results = new List<ConsolidatedResult>();
             var identities = new List<Identity>();
 
-            if (string.IsNullOrEmpty(selectedNode) ||
-                IsConnectionParentNode(selectedNode))
+            var connections = this.GetConnections(selectedNode);
+            foreach (var connection in connections)
             {
-                // All | Social | Enterprise
-                var connections = this.GetConnections(selectedNode);
-                foreach (var connection in connections)
-                {
-                    identities.Add(new Identity
-                    {
-                        Connection = connection.Name,
-                        IsSocial = this.IsSocialConnection(connection.Name)
-                    });
-                }
-            }
-            else
-            {
-                // Specific connection node
                 identities.Add(new Identity
                 {
-                    Connection = selectedNode,
-                    IsSocial = this.IsSocialConnection(selectedNode)
+                    Connection = connection.Name,
+                    IsSocial = this.IsSocialConnection(connection.Name)
                 });
             }
 

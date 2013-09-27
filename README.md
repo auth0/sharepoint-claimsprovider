@@ -1,4 +1,4 @@
-Auth0 Claims Provider for SharePoint 2010
+Auth0 Claims Provider for SharePoint 2010 / 2013
 
 ## Prerequisites
   - SharePoint solution development tools for Visual Studio 2010

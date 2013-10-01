@@ -13,7 +13,7 @@
 
     public class CustomClaimsProvider : SPClaimProvider
     {
-        public const string IdentifierClaimsType = "http://schemas.auth0.com/connection_email";
+        public const string IdentifierClaimsType = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress";
         public const string ClientIdClaimsType = "http://schemas.auth0.com/clientID";
         public const string ConnectionClaimType = "http://schemas.auth0.com/connection";
         public const char IdentifierValuesSeparator = '|';
@@ -322,8 +322,9 @@
             {
                 var socialUsers = this.auth0Client.GetSocialUsers(input);
                 var enterpriseUsers = this.auth0Client.GetEnterpriseUsers(input);
-                    
-                users = socialUsers.Union(enterpriseUsers);
+
+                // distinct by user.Email
+                users = socialUsers.Union(enterpriseUsers).DistinctBy(u => u.Email);
             }
             catch (Exception ex)
             {
@@ -372,8 +373,7 @@
                         auth0User.Email;
 
                 pe.Description = string.Format(
-                    "Connection: {0}; Email: {1}; Name: {2}",
-                    auth0User.Identities.First().Connection,
+                    "Email: {0}; Name: {1}",
                     auth0User.Email,
                     auth0User.Name);
 

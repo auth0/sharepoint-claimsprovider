@@ -367,9 +367,12 @@
                     Microsoft.IdentityModel.Claims.ClaimValueTypes.String,
                     SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, this.associatedSPTrustedLoginProvider.Name));
 
+                var displayText = !string.IsNullOrEmpty(auth0User.FamilyName) && !string.IsNullOrEmpty(auth0User.GivenName) ?
+                    string.Format("{0} {1}", auth0User.GivenName, auth0User.FamilyName) : auth0User.Name;
+
                 pe.DisplayText =
-                    !string.IsNullOrEmpty(auth0User.Name) ?
-                        string.Format("{0} ({1})", auth0User.Name, auth0User.Email) :
+                    !string.IsNullOrEmpty(displayText) ?
+                        string.Format("{0} ({1})", displayText, auth0User.Email) :
                         auth0User.Email;
 
                 pe.Description = string.Format(
@@ -378,7 +381,7 @@
                     auth0User.Name);
 
                 pe.EntityType = SPClaimEntityTypes.User;
-                pe.EntityData[PeopleEditorEntityDataKeys.DisplayName] = auth0User.Name;
+                pe.EntityData[PeopleEditorEntityDataKeys.DisplayName] = displayText;
                 pe.EntityData[PeopleEditorEntityDataKeys.Email] = auth0User.Email;
                 pe.EntityData["Picture"] = auth0User.Picture;
             }

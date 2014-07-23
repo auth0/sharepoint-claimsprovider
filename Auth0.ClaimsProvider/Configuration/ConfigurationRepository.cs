@@ -20,6 +20,11 @@
                 configuration.PickerEntityGroupName = "Results";
             }
 
+            if (string.IsNullOrEmpty(configuration.IdentifierUserField))
+            {
+                configuration.IdentifierUserField = "Email";
+            }
+
             return configuration;
         }
 

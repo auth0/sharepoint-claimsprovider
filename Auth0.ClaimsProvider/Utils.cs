@@ -62,6 +62,13 @@
                 string.Empty;
         }
 
+        public static object GetPropValue(object src, string propName)
+        {
+            return src.GetType().GetProperty(propName) != null ?
+                src.GetType().GetProperty(propName).GetValue(src, null) :
+                string.Empty;
+        }
+
         internal static bool ValidEmail(string email)
         {
             var pattern = @"^(?!\.)(""([^""\r\\]|\\[""\r\\])*""|" +

@@ -81,6 +81,15 @@
 						    <br/>
 					    </Template_control>
 				    </wssuc:InputFormControl>
+                    <wssuc:InputFormControl ID="InputFormControl4" LabelText="InputFormControlLabelText">
+					    <Template_control>
+                            <br/>
+						    <SharePoint:EncodedLiteral ID="EncodedLiteral2" runat="server" text="Identifier User Field:" EncodeMethod='HtmlEncode'/>
+						    <br/>
+						    <wssawc:InputFormTextBox title="Identifier User Field" class="ms-input" ID="IdentifierUserFieldTextBox" Runat="server" Columns="30" MaxLength="255" />
+						    <br/>
+					    </Template_control>
+				    </wssuc:InputFormControl>
 			    </table>
                 <br|
 		    </template_inputformcontrols>

@@ -17,6 +17,9 @@
         private string domain;
 
         [Persisted]
+        private string identifierUserField;
+
+        [Persisted]
         private bool alwaysResolveUserInput;
 
         [Persisted]
@@ -32,6 +35,7 @@
             this.ClientId = string.Empty;
             this.ClientSecret = string.Empty;
             this.Domain = string.Empty;
+            this.IdentifierUserField = string.Empty;
             this.PickerEntityGroupName = string.Empty;
         }
 
@@ -54,6 +58,13 @@
             get { return this.domain; }
 
             set { this.domain = value; }
+        }
+
+        public string IdentifierUserField
+        {
+            get { return this.identifierUserField; }
+
+            set { this.identifierUserField = value; }
         }
 
         public bool AlwaysResolveUserInput

@@ -103,6 +103,24 @@ namespace Auth0.ClaimsProvider.AdminWeb {
         protected global::Microsoft.SharePoint.WebControls.InputFormTextBox ClientSecretTextBox;
         
         /// <summary>
+        /// EncodedLiteral2 control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::Microsoft.SharePoint.WebControls.EncodedLiteral EncodedLiteral2;
+        
+        /// <summary>
+        /// IdentifierUserFieldTextBox control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::Microsoft.SharePoint.WebControls.InputFormTextBox IdentifierUserFieldTextBox;
+        
+        /// <summary>
         /// IFSGeneralSettings2 control.
         /// </summary>
         /// <remarks>

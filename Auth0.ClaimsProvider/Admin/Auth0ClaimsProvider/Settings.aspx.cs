@@ -49,6 +49,7 @@
                 auth0Config.Domain = this.DomainTextBox.Text;
                 auth0Config.ClientId = this.ClientIdTextBox.Text;
                 auth0Config.ClientSecret = this.ClientSecretTextBox.Text;
+                auth0Config.IdentifierUserField = this.IdentifierUserFieldTextBox.Text;
                 auth0Config.PickerEntityGroupName = this.PickerEntityGroupNameTextBox.Text;
                 this.configurationRepository.SaveConfiguration(auth0Config);
                 this.Web.AllowUnsafeUpdates = false;
@@ -62,7 +63,8 @@
             // Validate settings
             if (string.IsNullOrEmpty(this.DomainTextBox.Text.Trim()) ||
                 string.IsNullOrEmpty(this.ClientIdTextBox.Text.Trim()) ||
-                string.IsNullOrEmpty(this.ClientSecretTextBox.Text.Trim()))
+                string.IsNullOrEmpty(this.ClientSecretTextBox.Text.Trim()) ||
+                string.IsNullOrEmpty(this.IdentifierUserFieldTextBox.Text.Trim()))
             {
                 this.LabelErrorMessage.Text = TextErrorFieldsMissing;
                 return;
@@ -88,6 +90,7 @@
                 this.DomainTextBox.Text = auth0Config.Domain;
                 this.ClientIdTextBox.Text = auth0Config.ClientId;
                 this.ClientSecretTextBox.Text = auth0Config.ClientSecret;
+                this.IdentifierUserFieldTextBox.Text = auth0Config.IdentifierUserField;
                 this.PickerEntityGroupNameTextBox.Text = auth0Config.PickerEntityGroupName;
             }
         }

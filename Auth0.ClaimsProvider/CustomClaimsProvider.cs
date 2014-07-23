@@ -13,7 +13,6 @@
 
     public class CustomClaimsProvider : SPClaimProvider
     {
-        public const string IdentifierClaimsType = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress";
         public const string ClientIdClaimsType = "http://schemas.auth0.com/clientID";
         public const string ConnectionClaimType = "http://schemas.auth0.com/connection";
         public const char IdentifierValuesSeparator = '|';
@@ -22,7 +21,6 @@
         private const string UsersNode = "Users";
         private const string GroupsNode = "Groups";
 
-
         private readonly IConfigurationRepository configurationRepository;
 
         private SPTrustedLoginProvider associatedSPTrustedLoginProvider; // Name of the SPTrustedLoginProvider associated with the claim provider
@@ -30,6 +28,7 @@
         private Auth0Config auth0Config;
         private bool alwaysResolveValue;
         private string pickerEntityGroupName;
+        private string identifierClaimType;
 
         public CustomClaimsProvider(string displayName)
             : this(displayName, new ConfigurationRepository())
@@ -97,7 +96,7 @@
                 throw new ArgumentNullException("claimTypes");
             }
 
-            claimTypes.Add(IdentifierClaimsType);
+            claimTypes.Add(this.identifierClaimType);
             claimTypes.Add(ConnectionClaimType);
         }
 
@@ -296,6 +295,8 @@
                         clientsIds[clientIdIndex],
                         clientsSecrets[clientIdIndex],
                         this.auth0Config.Domain);
+
+                    this.identifierClaimType = this.associatedSPTrustedLoginProvider.IdentityClaimTypeInformation.InputClaimType;
                 }
                 catch (Exception ex)
                 {
@@ -362,8 +363,10 @@
             if (claimEntityType == SPClaimEntityTypes.User)
             {
                 claim = new SPClaim(
-                    IdentifierClaimsType,
-                    auth0User.UniqueEmail(),
+                    this.identifierClaimType,
+                    string.IsNullOrEmpty(this.auth0Config.IdentifierUserField) || this.auth0Config.IdentifierUserField == "Email" ?
+                        auth0User.UniqueEmail() :
+                        Utils.GetPropValue(auth0User, this.auth0Config.IdentifierUserField).ToString(),
                     Microsoft.IdentityModel.Claims.ClaimValueTypes.String,
                     SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, this.associatedSPTrustedLoginProvider.Name));
 

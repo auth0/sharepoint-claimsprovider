@@ -4,8 +4,7 @@
     using System.Runtime.InteropServices;
     using Microsoft.SharePoint.Administration;
 
-    //[GuidAttribute("E3F4059C-DEC6-4887-80E6-2396AA2FE411")]
-    [GuidAttribute("A6299CFF-8417-43DC-87FA-9D46E27544BF")]
+    [GuidAttribute("E3F4059C-DEC6-4887-80E6-2396AA2FE411")]
     public class Auth0Config : SPPersistedObject
     {
         [Persisted]

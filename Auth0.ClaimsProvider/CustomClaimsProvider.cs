@@ -86,7 +86,7 @@
 
         internal static string ProviderInternalName
         {
-            get { return "Auth0ClaimsProvider"; }
+            get { return "Auth0FederatedUsers"; }
         }
 
         protected override void FillClaimTypes(List<string> claimTypes)

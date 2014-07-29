@@ -100,7 +100,7 @@
     <None Include="key.snk" />
     <None Include="packages.config" />
     <None Include="Package\Package.package">
-      <PackageId>{8d1c1a7c-a9d2-4538-b969-cd702c737bf3}</PackageId>
+      <PackageId>{9d1c1a7c-a9d2-4538-b969-cd702c737bf3}</PackageId>
     </None>
     <None Include="Package\Package.Template.xml">
       <DependentUpon>Package.package</DependentUpon>

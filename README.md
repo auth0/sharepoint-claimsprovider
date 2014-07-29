@@ -24,7 +24,7 @@ Auth0 Claims Provider for SharePoint 2010 / 2013
   2. Associate Auth0 (SP Trusted Identity Token Issuer) with our Claims Provider:
   
   ~~~ps1
-  Set-SPTrustedIdentityTokenIssuer -identity Auth0 -ClaimProvider "Auth0ClaimsProvider"
+  Set-SPTrustedIdentityTokenIssuer -identity Auth0 -ClaimProvider "Auth0FederatedUsers"
   ~~~
   
   3. Go to Central Admin -> Security

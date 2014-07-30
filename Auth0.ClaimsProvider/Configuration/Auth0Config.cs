@@ -80,5 +80,17 @@
 
             set { this.pickerEntityGroupName = value; }
         }
+
+        public bool IsValid
+        {
+            get
+            {
+                return
+                    !string.IsNullOrEmpty(this.Domain) &&
+                    !string.IsNullOrEmpty(this.ClientId) &&
+                    !string.IsNullOrEmpty(this.ClientSecret) &&
+                    !string.IsNullOrEmpty(this.IdentifierUserField);
+            }
+        }
     }
 }

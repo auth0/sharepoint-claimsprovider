@@ -38,17 +38,10 @@
         public CustomClaimsProvider(string displayName, IConfigurationRepository configurationRepository)
             : base(displayName)
         {
-            if (SPContext.Current == null)
-            {
-                return;
-            }
-
             this.configurationRepository = configurationRepository;
 
             // TODO: remove this
             ServicePointManager.ServerCertificateValidationCallback += delegate { return true; };
-
-            this.Initialize();
         }
 
         public override string Name
@@ -96,7 +89,11 @@
                 throw new ArgumentNullException("claimTypes");
             }
 
-            claimTypes.Add(this.identifierClaimType);
+            if (!string.IsNullOrEmpty(this.identifierClaimType))
+            {
+                claimTypes.Add(this.identifierClaimType);
+            }
+            
             claimTypes.Add(ConnectionClaimType);
         }
 
@@ -201,7 +198,7 @@
 
             SPSecurity.RunWithElevatedPrivileges(delegate
             {
-                this.Initialize();
+                this.InitializeAuth0Client();
                 var consolidatedResults = this.ResolveInputBulk(resolveInput, string.Empty);
 
                 if (consolidatedResults != null)
@@ -228,7 +225,7 @@
             SPProviderHierarchyNode matchNode = null;
             SPSecurity.RunWithElevatedPrivileges(delegate
             {
-                this.Initialize();
+                this.InitializeAuth0Client();
                 var consolidatedResults = this.ResolveInputBulk(searchPattern, hierarchyNodeID);
 
                 if (consolidatedResults != null)
@@ -276,36 +273,39 @@
             });
         }
 
-        protected void Initialize()
+        protected void InitializeAuth0Client()
         {
-            this.associatedSPTrustedLoginProvider = Utils.GetSPTrustAssociatedWithCP(ProviderInternalName);
-            if (this.associatedSPTrustedLoginProvider != null)
+            this.auth0Config = this.configurationRepository.GetConfiguration();
+
+            if (!this.auth0Config.IsValid)
             {
-                this.auth0Config = this.configurationRepository.GetConfiguration();
-
-                try
-                {
-                    var clientsIds = this.auth0Config.ClientId.Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
-                    var clientsSecrets = this.auth0Config.ClientSecret.Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
-                    var clientIdIndex = Array.IndexOf(clientsIds, Utils.GetClaimsValue(ClientIdClaimsType));
-                    // if clientID was not found, use the first one configured on central admin
-                    if (clientIdIndex == -1) clientIdIndex = 0;
-
-                    this.auth0Client = new Auth0.Client(
-                        clientsIds[clientIdIndex],
-                        clientsSecrets[clientIdIndex],
-                        this.auth0Config.Domain);
-
-                    this.identifierClaimType = this.associatedSPTrustedLoginProvider.IdentityClaimTypeInformation.InputClaimType;
-                }
-                catch (Exception ex)
-                {
-                    Utils.LogToULS(ex.ToString(), TraceSeverity.Unexpected, EventSeverity.Error);
-                }
-
-                this.alwaysResolveValue = true; //this.auth0Config.AlwaysResolveUserInput;
-                this.pickerEntityGroupName = this.auth0Config.PickerEntityGroupName;
+                return;
             }
+
+            try
+            {
+                var clientsIds = this.auth0Config.ClientId.Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
+                var clientsSecrets = this.auth0Config.ClientSecret.Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
+                var clientIdIndex = Array.IndexOf(clientsIds, Utils.GetClaimsValue(ClientIdClaimsType));
+                
+                // if clientID was not found, use the first one configured on central admin
+                if (clientIdIndex == -1)
+                {
+                    clientIdIndex = 0;
+                }
+
+                this.auth0Client = new Auth0.Client(
+                    clientsIds[clientIdIndex],
+                    clientsSecrets[clientIdIndex],
+                    this.auth0Config.Domain);
+            }
+            catch (Exception ex)
+            {
+                Utils.LogToULS(ex.ToString(), TraceSeverity.Unexpected, EventSeverity.Error);
+            }
+
+            this.alwaysResolveValue = true; //this.auth0Config.AlwaysResolveUserInput;
+            this.pickerEntityGroupName = this.auth0Config.PickerEntityGroupName;
         }
 
         protected virtual ICollection<ConsolidatedResult> ResolveInputBulk(string input, string selectedNode)
@@ -433,6 +433,13 @@
             {
                 // The root site doesn't exist
                 this.associatedSPTrustedLoginProvider = Utils.GetSPTrustAssociatedWithCP(ProviderInternalName);
+
+                if (this.associatedSPTrustedLoginProvider != null &&
+                    this.associatedSPTrustedLoginProvider.IdentityClaimTypeInformation != null)
+                {
+                    this.identifierClaimType = this.associatedSPTrustedLoginProvider.IdentityClaimTypeInformation.InputClaimType;
+                }
+
                 return this.associatedSPTrustedLoginProvider != null;
             }
 
@@ -459,6 +466,13 @@
                     if (prov.ClaimProviderName == ProviderInternalName)
                     {
                         this.associatedSPTrustedLoginProvider = Utils.GetSPTrustAssociatedWithCP(ProviderInternalName);
+
+                        if (this.associatedSPTrustedLoginProvider != null &&
+                            this.associatedSPTrustedLoginProvider.IdentityClaimTypeInformation != null)
+                        {
+                            this.identifierClaimType = this.associatedSPTrustedLoginProvider.IdentityClaimTypeInformation.InputClaimType;
+                        }
+
                         return this.associatedSPTrustedLoginProvider != null;
                     }
                 }

@@ -12,7 +12,7 @@ Auth0 Claims Provider for SharePoint 2010 / 2013
   2. Compile solution
   3. Right click on project -> Package (that will generate a .wsp file)
   4. Open a SharePoint Powershell session to install and deploy the solution:
-  
+
   ~~~ps1
   Add-SPSolution -LiteralPath "<path to .wsp file>"
   Install-SPSolution -Identity auth0.claimsprovider.wsp -GACDeployment
@@ -29,7 +29,7 @@ Auth0 Claims Provider for SharePoint 2010 / 2013
   
   3. Go to Central Admin -> Security
       1. Under General Security section, click on "Configure Auth0 Claims Provider"
-      2. Set the required configuration parameters (like domain, client ID and client secret)
+      2. Set the required configuration parameters (like domain, client ID, client secret and identifier user field)
 
 ## Documentation
 

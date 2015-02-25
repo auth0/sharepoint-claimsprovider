@@ -15,6 +15,7 @@
     {
         public const string ClientIdClaimsType = "http://schemas.auth0.com/clientID";
         public const string ConnectionClaimType = "http://schemas.auth0.com/connection";
+        public const string RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
         public const char IdentifierValuesSeparator = '|';
         private const string SocialHierarchyNode = "Social";
         private const string EnterpriseHierarchyNode = "Enterprise";
@@ -171,6 +172,10 @@
 
                     resolved.Add(this.GetPickerEntity(user, SPClaimEntityTypes.FormsRole));
                 }
+                else if (resolveInput.ClaimType == RoleClaimType)
+                {
+                    resolved.Add(this.GetRolePickerEntity(resolveInput.Value));
+                }
                 else if (this.alwaysResolveValue)
                 {
                     var user = new Auth0.User
@@ -317,6 +322,12 @@
                 return null;
             }
 
+            if (this.auth0Client == null)
+            {
+                Utils.LogToULS("Auth0 client was not initialized.", TraceSeverity.Unexpected, EventSeverity.Warning);
+                return null;
+            }
+
             IEnumerable<Auth0.User> users = null;
 
             try
@@ -353,6 +364,19 @@
             }
 
             return consolidatedResults;
+        }
+        protected virtual PickerEntity GetRolePickerEntity(string role)
+        {
+            PickerEntity pe = CreatePickerEntity();
+            pe.DisplayText = string.Format("'{0}' Role", role);
+            pe.Description = string.Format("[{0}] '{1}' Role", ProviderInternalName, role);
+            pe.EntityType = SPClaimEntityTypes.FormsRole;
+            pe.Claim = new SPClaim(RoleClaimType, role,
+                Microsoft.IdentityModel.Claims.ClaimValueTypes.String,
+                SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, this.associatedSPTrustedLoginProvider.Name));
+            pe.IsResolved = true;
+            pe.EntityGroupName = this.pickerEntityGroupName;
+            return pe;
         }
 
         protected virtual PickerEntity GetPickerEntity(Auth0.User auth0User, string claimEntityType)

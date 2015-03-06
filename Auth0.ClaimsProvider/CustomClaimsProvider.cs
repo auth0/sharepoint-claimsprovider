@@ -33,7 +33,7 @@
 
         public CustomClaimsProvider(string displayName)
             : this(displayName, new ConfigurationRepository())
-        { 
+        {
         }
 
         public CustomClaimsProvider(string displayName, IConfigurationRepository configurationRepository)
@@ -94,7 +94,7 @@
             {
                 claimTypes.Add(this.identifierClaimType);
             }
-            
+
             claimTypes.Add(ConnectionClaimType);
         }
 
@@ -132,16 +132,19 @@
 
         protected override void FillResolve(Uri context, string[] entityTypes, SPClaim resolveInput, List<PickerEntity> resolved)
         {
+            Auth0LoggingService.Write("FillResolve input: {0}", resolveInput != null ? resolveInput.ClaimType + "/" + resolveInput.Value : "empty");
+
             if (!this.SetSPTrustInCurrentContext(context))
             {
+                Auth0LoggingService.Write("FillResolve: SetSPTrustInCurrentContext=false.");
                 return;
             }
 
-            if (!string.Equals(
-                    resolveInput.OriginalIssuer,
+            if (!String.Equals(resolveInput.OriginalIssuer,
                     SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, this.associatedSPTrustedLoginProvider.Name),
                     StringComparison.OrdinalIgnoreCase))
             {
+                Auth0LoggingService.Write("FillResolve: Original issuers don't match, {0} != {1}.", resolveInput.OriginalIssuer, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, this.associatedSPTrustedLoginProvider.Name));
                 return;
             }
 
@@ -153,7 +156,7 @@
                     resolveInput.Value.Split(IdentifierValuesSeparator)[0] : string.Empty;
 
                 var consolidatedResults = this.ResolveInputBulk(input, connectionName);
-                
+
                 if (consolidatedResults != null && consolidatedResults.Count > 0)
                 {
                     resolved.Add(consolidatedResults.ElementAt(0).PickerEntity);
@@ -242,7 +245,7 @@
                         results.ToList().ForEach(
                             r => consolidatedResults.Add(r));
                     }
-                    else if (this.alwaysResolveValue && 
+                    else if (this.alwaysResolveValue &&
                              Utils.ValidEmail(searchPattern) &&
                              !consolidatedResults.Any(
                                 r => r.Auth0User.Email.Equals(searchPattern, StringComparison.OrdinalIgnoreCase) &&
@@ -292,7 +295,7 @@
                 var clientsIds = this.auth0Config.ClientId.Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
                 var clientsSecrets = this.auth0Config.ClientSecret.Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
                 var clientIdIndex = Array.IndexOf(clientsIds, Utils.GetClaimsValue(ClientIdClaimsType));
-                
+
                 // if clientID was not found, use the first one configured on central admin
                 if (clientIdIndex == -1)
                 {
@@ -306,7 +309,7 @@
             }
             catch (Exception ex)
             {
-                Utils.LogToULS(ex.ToString(), TraceSeverity.Unexpected, EventSeverity.Error);
+                Auth0LoggingService.WriteError(ex.ToString());
             }
 
             this.alwaysResolveValue = true; //this.auth0Config.AlwaysResolveUserInput;
@@ -315,8 +318,8 @@
 
         protected virtual ICollection<ConsolidatedResult> ResolveInputBulk(string input, string selectedNode)
         {
-            var consolidatedResults = new Collection<ConsolidatedResult>();
-            
+            Auth0LoggingService.Write("ResolveInputBulk: input={0}, selectedNode={1}", input, selectedNode);
+
             if (string.IsNullOrEmpty(input))
             {
                 return null;
@@ -324,23 +327,29 @@
 
             if (this.auth0Client == null)
             {
-                Utils.LogToULS("Auth0 client was not initialized.", TraceSeverity.Unexpected, EventSeverity.Warning);
+                Auth0LoggingService.WriteError("Auth0 client was not initialized.");
                 return null;
             }
 
             IEnumerable<Auth0.User> users = null;
+            var consolidatedResults = new Collection<ConsolidatedResult>();
 
             try
             {
+                Auth0LoggingService.Write("ResolveInputBulk: Searching for social and enterprise users.");
+
                 var socialUsers = this.auth0Client.GetSocialUsers(input);
                 var enterpriseUsers = this.auth0Client.GetEnterpriseUsers(input);
 
-                // distinct by user.Email
+                // Distinct by user.Email
                 users = socialUsers.Union(enterpriseUsers).DistinctBy(u => u.Email);
+
+                // Log results.
+                Auth0LoggingService.Write("ResolveInputBulk: Found {0}.", users != null ? users.Count() : 0);
             }
             catch (Exception ex)
             {
-                Utils.LogToULS(ex.ToString(), TraceSeverity.Unexpected, EventSeverity.Error);
+                Auth0LoggingService.WriteError(ex.ToString());
             }
 
             if (users != null)
@@ -538,10 +547,12 @@
                 {
                     connections = this.auth0Client.GetSocialConnections();
                 }
+
+                Auth0LoggingService.Write("GetConnections: Total connections {0}", connections != null ? connections.Count() : 0);
             }
             catch (Exception ex)
             {
-                Utils.LogToULS(ex.ToString(), TraceSeverity.Unexpected, EventSeverity.Error);
+                Auth0LoggingService.WriteError(ex.ToString());
             }
 
             return connections != null ? connections : new List<Auth0.Connection>();

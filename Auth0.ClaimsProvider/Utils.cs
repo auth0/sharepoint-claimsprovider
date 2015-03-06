@@ -26,32 +26,13 @@
                 }
                 else
                 {
-                    LogToULS(
-                        string.Format("Claim provider '{0}' is associated to several TrustedLoginProvider, which is not supported because there is no way to determine what TrustedLoginProvider is currently calling the claim provider during search and resolution.", providerInternalName),
-                        TraceSeverity.Unexpected, 
-                        EventSeverity.Error);
+                    Auth0LoggingService.WriteError("Claim provider '{0}' is associated to several TrustedLoginProvider, which is not supported because there is no way to determine what TrustedLoginProvider is currently calling the claim provider during search and resolution.", providerInternalName);
                 }
             }
 
-            LogToULS(
-                string.Format("Claim provider '{0}' is not associated with any SPTrustedLoginProvider, and it cannot create permissions for a trust if it is not associated to it.\r\nUse PowerShell cmdlet Get-SPTrustedIdentityTokenIssuer to create association", providerInternalName),
-                TraceSeverity.Unexpected, 
-                EventSeverity.Warning);
-            
-            return null;
-        }
+            Auth0LoggingService.WriteError("Claim provider '{0}' is not associated with any SPTrustedLoginProvider, and it cannot create permissions for a trust if it is not associated to it.\r\nUse PowerShell cmdlet Get-SPTrustedIdentityTokenIssuer to create association", providerInternalName);
 
-        public static void LogToULS(string message, TraceSeverity traceSeverity, EventSeverity eventSeverity)
-        {
-            try
-            {
-                var category = new SPDiagnosticsCategory(CustomClaimsProvider.ProviderInternalName, traceSeverity, eventSeverity);
-                var ds = SPDiagnosticsService.Local;
-                ds.WriteTrace(0, category, traceSeverity, message);
-            }
-            catch
-            {
-            }
+            return null;
         }
 
         public static string GetClaimsValue(string claimType)

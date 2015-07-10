@@ -1,4 +1,8 @@
-Auth0 Claims Provider for SharePoint 2010 / 2013
+# Deprecated
+
+This repository has been deprecated. Please refer to the following repository for everything SharePoint related: https://github.com/auth0/auth0-sharepoint
+
+# Auth0 Claims Provider for SharePoint 2010 / 2013
 
 ## Prerequisites
   - SharePoint solution development tools for Visual Studio 2010
